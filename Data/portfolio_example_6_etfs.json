@@ -1,0 +1,32 @@
+[
+  {
+    "position_type": "etf",
+    "symbol": "EEM.US",
+    "quantity": 572
+  },
+  {
+    "position_type": "etf",
+    "symbol": "EFA.US",
+    "quantity": 342
+  },
+  {
+    "position_type": "etf",
+    "symbol": "SPY.US",
+    "quantity": 119
+  },
+  {
+    "position_type": "etf",
+    "symbol": "IEF.US",
+    "quantity": 130
+  },
+  {
+    "position_type": "etf",
+    "symbol": "SHY.US",
+    "quantity": 162
+  },
+  {
+    "position_type": "etf",
+    "symbol": "TLT.US",
+    "quantity": 215
+  }
+]
