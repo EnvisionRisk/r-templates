@@ -1,8 +1,8 @@
 options(scipen=999)
 
 #### DEPENDENCIES ####
-source("r-templates-main/envrsk_api_bridge_2_R.R")
-source("r-templates-main/Demo/RiskAggregation/risk_aggregation_dependencies.R")
+source("envrsk_api_bridge_2_R.R")
+source("Demo/RiskAggregation/risk_aggregation_dependencies.R")
 
 library(data.tree)
 library(data.table)
@@ -49,7 +49,7 @@ print(paste0("The access-token is valid until: ", my_access_token[["access-token
 # 'https://api.envisionrisk.com/v1/themis/portfolio-risk-component' 
 #******************************************************************************
 # Use the file from the r-template-main repository (if it has been downloaded)
-my_port <- base::readRDS("r-templates-main/Data/example_port_structure.rds")
+my_port <- base::readRDS("Data/example_port_structure.rds")
 
 #### Download the portfolio-file used for the demonstration from an external location ####
 #my_port <- base::readRDS(base::url("https://www.dropbox.com/s/h54j08xb5envg4p/example_port_structure.rds?raw=1"))
