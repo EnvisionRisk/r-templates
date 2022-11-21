@@ -93,7 +93,15 @@ get_access_token <- function(usr_id, usr_pwd){
   # Query parameters
   .query <- list("usr_id"  = usr_id,
                  "usr_pwd" = usr_pwd)
-
+  
+  if(is.null(usr_id) | is.na(usr_id) | usr_id == ""){
+    return(list(error="Missing required parameter: usr_id"))
+  }
+  
+  if(is.null(usr_pwd) | is.na(usr_pwd) | usr_pwd == ""){
+    return(list(error="Missing required parameter: usr_pwd"))
+  }
+  
   access_token_expiry <- Sys.time() + 24*60*60
   get_access_token <- httr::GET(
     url    = "https://api.envisionrisk.com/auth/get-access-token",
