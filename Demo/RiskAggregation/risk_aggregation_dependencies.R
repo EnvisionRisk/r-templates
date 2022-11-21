@@ -15,8 +15,6 @@ sapply(pckg, usePackage)
 #*
 #******************************************************************************
 do_remove_last <- function(str_in, splitter = "//"){
-  #str_in <- "Treasury//Fixed_Income//IEF.US"
-  #splitter = "//"
   splt_str <- stringr::str_split(str_in, splitter)[[1]]  
   splt_str <- head(splt_str, -1)
   if(length(splt_str) > 1){
@@ -27,8 +25,6 @@ do_remove_last <- function(str_in, splitter = "//"){
 }
 
 do_remove_first <- function(str_in, splitter = "//"){
-  #str_in <- "Treasury//Fixed_Income//IEF.US"
-  #splitter = "//"
   splt_str <- stringr::str_split(str_in, splitter)[[1]]  
   splt_str <- tail(splt_str, -1)
   if(length(splt_str) > 1){
@@ -39,8 +35,6 @@ do_remove_first <- function(str_in, splitter = "//"){
 }
 
 get_last_element <- function(str_in, splitter = "//"){
-  #str_in <- "Treasury//Fixed_Income//IEF.US"
-  #splitter = "//"
   splt_str <- stringr::str_split(str_in, splitter)[[1]]  
   splt_str <- tail(splt_str, 1)
   
@@ -48,7 +42,6 @@ get_last_element <- function(str_in, splitter = "//"){
 }
 
 DataTreeToJson <- function(data_tree, splitter = "//"){
-  #data_tree <- ego
   stopifnot(c("position_type", "quantity") %in% data_tree$attributesAll)
   x <- data.table(ToDataFrameTable(data_tree, "pathString", "position_type", "quantity"))
   x[, location := gsub("/", "//", pathString)]
@@ -56,8 +49,6 @@ DataTreeToJson <- function(data_tree, splitter = "//"){
   x[, location := mapply(do_remove_first, location, "//")]
   x[, location := mapply(do_remove_last, location, "//")]
   x[, pathString := NULL]
-  #x <- envrsk_decorate_portfolio_id(access_token, x)
-  #setnames(x, "POSITION_ID", "position_id")
   return(jsonlite::toJSON(x, pretty = TRUE))
 }
 
