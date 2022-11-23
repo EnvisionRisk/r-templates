@@ -78,7 +78,10 @@ system.time(
     access_token  = access_token, 
     date          = demo_date, 
     positions     = demo_port[,.(symbol, position_type, quantity)],
-    volatility_id = demo_volatility_id)
+    volatility_id = demo_volatility_id,
+    signif_level  = 0.975,
+    horizon       = 1,
+    base_cur      = "EUR")
 )
 
 # Retain the data that we need from API request (demo_port_risk_out)
@@ -118,7 +121,10 @@ system.time(
     access_token  = access_token, 
     date          = demo_date, 
     positions     = demo_port,
-    volatility_id = demo_volatility_id)
+    volatility_id = demo_volatility_id,
+    signif_level  = 0.975,
+    horizon       = 1,
+    base_cur      = "EUR")
 )
 
 # Retain the data we need from API call (demo_port_risk_out)

@@ -1,0 +1,173 @@
+---
+title: "Risk Snapshot"
+date: '`r paste0("Dashboard created at: ", Sys.time())`'
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    storyboard: false
+    vertical_layout: fill
+    logo: www/logo-icon.png
+    self_contained: true
+params: 
+  workflow_object: null
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(knitr)
+library(kableExtra)
+library(ggplot2)
+library(treemapify)
+```
+<script>
+$('.navbar-logo').wrap('<a href="https://www.envisionrisk.com" target=_blank>');
+</script>
+
+
+<style>
+.navbar, [data-toggle=tab], .navbar-brand  {   background-color:#AEC0C9;   border-color:black;   color:white; }
+
+.navbar-logo img {
+    position: absolute;
+    right: 0px;
+}
+
+.navbar-inverse .navbar-nav > li > a:hover,
+.navbar-inverse .navbar-nav > li > a:focus {
+    background-color: #27647B;
+    color: white;
+}
+.navbar-inverse .navbar-nav > .active > a,
+.navbar-inverse .navbar-nav > .active > a:hover,
+.navbar-inverse .navbar-nav > .active > a:focus {
+  color: white;
+  background-color: #27647B;
+}
+.navbar-inverse .navbar-toggle:hover,
+.navbar-inverse .navbar-toggle:focus {
+  background-color: #27647B;
+}
+.navbar-inverse .navbar-collapse,
+.navbar-inverse .navbar-form {
+  border-color: #27647B;
+}
+</style>
+
+Summary {data-navmenu="Navigate"}
+=====================================  
+
+Row {data-height=50}
+-------------------------------------
+
+The dashboard is created based on the settings below. It consist of 2 pages: A 'Summary' page and a 'Risk Decomposition' page. The 'Summary' page (the page you are on) contains the settings used for the creation of the dashboard as well as the portfolio profit/loss distribution. The page 'Risk Decomposition' contains detailed risk information for the top 10 portfolio positions (by market value and risk). Additionally it contains information about diversification in the portfolio. Use the 'Navigate' drop-down meny at the top of this page to navigate between the pages. In case you have any question or comments to the dashboard please contact EnvisionRisk at info@envisionrisk.com.
+
+Row {data-height=50}
+-------------------------------------
+
+### Date
+
+```{r}
+flexdashboard::valueBox(format(as.Date(params$workflow_object$Input$date), format="%B %d %Y"), "Date (of prediction)", icon = "fas fa-calendar-check", color = get_color_classic_trustworthy()[1])
+```
+
+### Risk Measure
+
+```{r}
+flexdashboard::valueBox(ifelse(params$workflow_object$Input$risk_measure == "ES", "Expected Shortfall", "Value-at-Risk"), "Risk Measure", icon = "fas fa-eye", color = get_color_classic_trustworthy()[2])
+```
+
+### Base Currency
+
+```{r}
+flexdashboard::valueBox(params$workflow_object$Input$base_cur, "Base Currency", icon = "fas fa-money-bill", color = get_color_classic_trustworthy()[3])
+```
+
+Row {data-height=50}
+-------------------------------------
+
+### Horizon (in days)
+
+```{r}
+flexdashboard::valueBox(params$workflow_object$Input$horizon, "Horizon (in days)", icon = "fas fa-binoculars", color = get_color_classic_trustworthy()[4])
+```
+
+### Significance Level
+
+```{r}
+flexdashboard::valueBox(paste(round(100*params$workflow_object$Input$signif_level, 1), "%", sep=""), "Significance Level", icon = "fas fa-crosshairs", color = get_color_classic_trustworthy()[5])
+```
+
+### Volatility Assumption
+
+```{r}
+flexdashboard::valueBox(params$workflow_object$Input$volatility_id, "Volatility Assumption (for the prediction)", icon = "fas fa-cogs", color = get_color_classic_trustworthy()[1])
+```
+
+Row {data-height=50}
+-------------------------------------
+
+The risk measurement is based on the uncertainty of the future profit/loss (P&L) for the portfolio. The P&L distribution shown below is based on simulating P&L for each individual position and aggregate those into a portfolio P&L distribution. The P&L distribution for the individual positions are based on EnvisionRisk’s Economic Scenario Generator which simulates future states of the markets for each individual position. Our Economic Scenario Generator is built upon advanced statistical techniques using extreme value distributions and copulas to better captures the special characteristics of financial instruments. Is based on a Monte Carlo simulation approach with 10,000 scenarios for each position. It takes volatility clustering, skewed return distributions and fat-tails into account. These methods are superior at adapting to the stylized characteristics of financial returns. 
+  
+
+Row {data-height=750}
+-------------------------------------
+
+### Portfolio Profit/Loss distribution
+
+```{r}
+risk_measurent <- sum(params$workflow_object[["portfolio_risk"]][["component"]])
+suppressMessages(envrsk_plot_pnl(params$workflow_object[["portfolio_delta_vector"]], 
+                                 risk_measurent, 
+                                 params$workflow_object$Input$base_cur))
+```   
+
+Risk Decomposition {data-orientation=rows, data-navmenu="Navigate"}
+=====================================     
+
+Row {data-height=50}
+-------------------------------------
+
+The table below summarizing the market value, risk and diversification effects for the top 10 positions in the portfolio (measured by market value and risk). The absolute numbers are in the base-currency and is dependent on the day of the prediction. The calculation of the risk is based on the risk measure type (Value-at-Risk or Expected Shortfall), the significance level, the volatility assumption and the risk horizon. The 'regular' risk column are the individual positions marginal risk, while the 'component' column are the individual positions risk contribution to the portfolio risk. The difference between the regular- and component risk measurement is interpreted as the diversification effect for the position. While the regular risk is always negative, the component risk for individual positions can be positive.    
+
+
+Row {data-height=300}
+-------------------------------------
+
+### Positions, Market Value, Risk & Diversification
+
+```{r}
+dt_risk <- merge(params$workflow_object[["portfolio_risk"]], 
+                 params$workflow_object[["positions"]], 
+                 by = "uid", 
+                 all.x = TRUE)
+data.table::setnames(dt_risk, "amount", "quantity")
+```
+
+```{r}
+dt_summary_risk <- dt_risk[, .(uid, symbol, name, quantity, notational, market_value, regular, component)]
+suppressMessages(envrsk_summary_risk(dt_summary_risk,
+                                     params$workflow_object$Input$base_cur))
+```
+
+Row {data-height=50}
+-------------------------------------
+
+Some commentary about the asset allocation & Diversification.
+
+Row {data-height=550}
+-------------------------------------
+
+### Portfolio Currency Denominated Risk
+
+```{r}
+dt_cur_risk <- dt_risk[, .(qc, notational, component)]
+suppressMessages(envrsk_plot_currency_denominated_risk(dt_cur_risk, params$workflow_object$Input$base_cur))
+```   
+
+### Diversification Effects (top 10)
+
+```{r}
+dt_summary_risk <- dt_risk[, .(uid, symbol, name, quantity, notational, market_value, regular, component)]
+suppressMessages(envrsk_plot_port_asset_diversification(dt_summary_risk,
+                 params$workflow_object$Input$base_cur))
+```
