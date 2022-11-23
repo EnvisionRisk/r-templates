@@ -22,6 +22,11 @@ write.excel <- function(x,row.names=FALSE,col.names=TRUE,...) {
   write.table(x,"clipboard",sep="\t",row.names=row.names,col.names=col.names,...)
 }
 
+IdGenerator <- function(n, pattern_len = c(2, 4, 2), pattern = c("[A-Z]", "[0-9]", "[a-z]")){
+  stopifnot(length(pattern_len) == length(pattern))
+  do.call(paste0, base::Map(stringi::stri_rand_strings, n = n, length = pattern_len, pattern = pattern))
+}
+
 #******************************************************************************
 #*
 #* Wrapping relevant EnvisionRisk Market Risk-as-a-Service API calls into R-functions

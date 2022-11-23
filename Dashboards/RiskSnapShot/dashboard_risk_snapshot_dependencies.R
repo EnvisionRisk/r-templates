@@ -91,7 +91,7 @@ dashboard_risk_snapshot <- function(access_token, date, positions, risk_measure,
   if(nrow(out_workflow_risk_snapshot[["positions_unmapped"]])){
     warning(paste("Some position was not recognised adn have been left out: ", paste(out_workflow_risk_snapshot[["positions_unmapped"]]$SYMBOL, collapse = ", ")))
   }
-  random_id <- EnvRskHelpers::IdGenerator(1)
+  random_id <- IdGenerator(1)
   output_file_name <- paste0("Report_Risk_Snapshot_", out_workflow_risk_snapshot$Input$date, "_id_", random_id)
   suppressWarnings(rmarkdown::render(input       = paste0(getwd(), "/Dashboards/RiskSnapShot/dashboard_risk_snapshot.Rmd"),
                                      output_file = paste0(getwd(), "/Output/", output_file_name, ".html"),
