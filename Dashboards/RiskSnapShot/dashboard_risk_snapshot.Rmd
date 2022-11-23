@@ -59,7 +59,7 @@ Summary {data-navmenu="Navigate"}
 Row {data-height=50}
 -------------------------------------
 
-The dashboard is created based on the settings below. It consist of 2 pages: A 'Summary' page and a 'Risk Decomposition' page. The 'Summary' page (the page you are on) contains the settings used for the creation of the dashboard as well as the portfolio profit/loss distribution. The page 'Risk Decomposition' contains detailed risk information for the top 10 portfolio positions (by market value and risk). Additionally it contains information about diversification in the portfolio. Use the 'Navigate' drop-down meny at the top of this page to navigate between the pages. In case you have any question or comments to the dashboard please contact EnvisionRisk at info@envisionrisk.com.
+The dashboard is created based on the settings below. It consist of 2 pages: A 'Summary' page and a 'Risk Decomposition' page. The 'Summary' page (the page you are on) contains the context used as well as the portfolio profit/loss distribution. The page 'Risk Decomposition' contains detailed risk information for the top 10 portfolio positions (by market value and risk). Also, page 2 contains information about portfolio diversification. Use the 'Navigate' drop-down menu at the top of the page to navigate between pages. In case you have any question or comments to the dashboard please contact EnvisionRisk at info@envisionrisk.com.
 
 Row {data-height=50}
 -------------------------------------
@@ -106,7 +106,7 @@ flexdashboard::valueBox(params$workflow_object$Input$volatility_id, "Volatility 
 Row {data-height=50}
 -------------------------------------
 
-The risk measurement is based on the uncertainty of the future profit/loss (P&L) for the portfolio. The P&L distribution shown below is based on simulating P&L for each individual position and aggregate those into a portfolio P&L distribution. The P&L distribution for the individual positions are based on EnvisionRisk’s Economic Scenario Generator which simulates future states of the markets for each individual position. Our Economic Scenario Generator is built upon advanced statistical techniques using extreme value distributions and copulas to better captures the special characteristics of financial instruments. Is based on a Monte Carlo simulation approach with 10,000 scenarios for each position. It takes volatility clustering, skewed return distributions and fat-tails into account. These methods are superior at adapting to the stylized characteristics of financial returns. 
+The portfolio uncertainty is best described by the profit/loss (P&L) distribution for the portfolio. The P&L distribution shown below is based on simulating P&L for each individual position and aggregate those into future portfolio P&L scenarios. The P&L distribution for the individual positions are based on EnvisionRisk’s Economic Scenario Generator which simulates future states of the markets for each individual position. Our Economic Scenario Generator is built upon advanced statistical techniques using extreme value distributions and copulas to better captures the special characteristics of financial instruments. Is based on a Monte Carlo simulation approach with 10,000 scenarios for each position. It takes volatility clustering, skewed return distributions and fat-tails into account. These methods are superior at adapting to the stylized characteristics of financial returns. 
   
 
 Row {data-height=750}
@@ -127,7 +127,7 @@ Risk Decomposition {data-orientation=rows, data-navmenu="Navigate"}
 Row {data-height=50}
 -------------------------------------
 
-The table below summarizing the market value, risk and diversification effects for the top 10 positions in the portfolio (measured by market value and risk). The absolute numbers are in the base-currency and is dependent on the day of the prediction. The calculation of the risk is based on the risk measure type (Value-at-Risk or Expected Shortfall), the significance level, the volatility assumption and the risk horizon. The 'regular' risk column are the individual positions marginal risk, while the 'component' column are the individual positions risk contribution to the portfolio risk. The difference between the regular- and component risk measurement is interpreted as the diversification effect for the position. While the regular risk is always negative, the component risk for individual positions can be positive.    
+The table below summarizing the market value, risk and diversification effects for the top 10 positions in the portfolio (measured by market value and risk). The absolute numbers are in the base-currency. The 'regular' - or unconditional - risk column shows the individual positions marginal risk, while the 'component' - or conditional - column shows the individual positions risk contribution to the overall portfolio risk. The difference between the regular- and component risk measurements are interpreted is the diversification effect for the position. While the regular risk is always negative, the component risk for individual positions can be positive.    
 
 
 Row {data-height=300}
@@ -152,7 +152,9 @@ suppressMessages(envrsk_summary_risk(dt_summary_risk,
 Row {data-height=50}
 -------------------------------------
 
-Some commentary about the asset allocation & Diversification.
+The table below to the left shows the notational and risk broken down by the denomination currency. The area of the figure shows the notational while the colour shows the risk.
+
+The figure below to the right.
 
 Row {data-height=550}
 -------------------------------------
