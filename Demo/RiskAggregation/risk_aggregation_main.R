@@ -94,7 +94,7 @@ demo_port_tree <- data.tree::as.Node(demo_port_risk)
 data.tree::Sort(demo_port_tree, "position_type", "ES", decreasing = TRUE)
 
 # Format the data-tree
-data.tree::SetFormat(demo_port_tree, "quantity", formatFun = function(x) format(round(as.numeric(x), 0), nsmall=0, big.mark=","))
+data.tree::SetFormat(demo_port_tree, "quantity", formatFun = function(x) {if(is.na(x)){""} else {format(round(x, 0), nsmall=0, big.mark=",")}})
 data.tree::SetFormat(demo_port_tree, "ES",       formatFun = function(x) format(round(as.numeric(x), 0), nsmall=0, big.mark=","))
 
 # SHOW THE INPUT AS A DATA-TREE
@@ -137,7 +137,7 @@ demo_port_tree <- data.tree::as.Node(demo_port_risk)
 data.tree::Sort(demo_port_tree, "position_type", "ES", decreasing = TRUE)
 
 # Format the data-tree
-data.tree::SetFormat(demo_port_tree, "quantity", formatFun = function(x) format(round(as.numeric(x), 0), nsmall=0, big.mark=","))
+data.tree::SetFormat(demo_port_tree, "quantity", formatFun = function(x) {if(is.na(x)){""} else {format(round(x, 0), nsmall=0, big.mark=",")}})
 data.tree::SetFormat(demo_port_tree, "ES",       formatFun = function(x) format(round(as.numeric(x), 0), nsmall=0, big.mark=","))
 
 # SHOW THE INPUT AS A DATA-TREE
@@ -159,7 +159,7 @@ demo_port_tree <- data.tree::as.Node(demo_port_risk[is.na(quantity)])
 
 # Sort the data-tree
 data.tree::Sort(demo_port_tree, "ES")
-data.tree::SetFormat(demo_port_tree, "ES", formatFun = function(x) format(round(as.numeric(x), 0), nsmall=0, big.mark=","))
+data.tree::SetFormat(demo_port_tree, "quantity", formatFun = function(x) {if(is.na(x)){""} else {format(round(x, 0), nsmall=0, big.mark=",")}})
 
 # OUTPUT
 print(demo_port_tree, 
