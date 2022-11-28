@@ -74,9 +74,9 @@ dashboard_backtest <- function(access_token, backtestdata, base_cur, signif_leve
                                                     base_cur      = base_cur,
                                                     signif_level  = signif_level)
   
-  if(!is.null(out_workflow_risk_snapshot[["status_code"]])){
-    if(out_workflow_risk_snapshot[["status_code"]] != 200){
-      return(out_workflow_risk_snapshot)
+  if(!is.null(out_workflow_backtest[["status_code"]])){
+    if(out_workflow_backtest[["status_code"]] != 200){
+      return(out_workflow_backtest)
     }
   }
   
