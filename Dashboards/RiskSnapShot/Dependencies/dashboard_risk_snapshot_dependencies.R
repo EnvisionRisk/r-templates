@@ -106,7 +106,7 @@ dashboard_risk_snapshot <- function(access_token, date, positions, risk_measure,
   }
   random_id <- IdGenerator(1)
   output_file_name <- paste0("Report_Risk_Snapshot_", out_workflow_risk_snapshot$Input$date, "_id_", random_id)
-  suppressWarnings(rmarkdown::render(input       = paste0(getwd(), "Dashboards/RiskSnapShot/Dependencies/dashboard_risk_snapshot.Rmd"),
+  suppressWarnings(rmarkdown::render(input       = paste0(getwd(), "/Dashboards/RiskSnapShot/Dependencies/dashboard_risk_snapshot.Rmd"),
                                      output_file = paste0("/home/rstudio/r-templates-main/Dashboards/RiskSnapShot/Output/", output_file_name, ".html"),
                                      params      = list(workflow_object = out_workflow_risk_snapshot),
                                      quiet       = TRUE))
