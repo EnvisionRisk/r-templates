@@ -80,6 +80,10 @@ dashboard_risk_snapshot <- function(access_token, date, positions, risk_measure,
                                     base_cur, horizon, signif_level,
                                     volatility_id){
 
+  if(Sys.Date() == as.Date(date)){
+    date <- Sys.Date() - 1
+  }
+  
   out_workflow_risk_snapshot <- envrsk_workflow_risk_snapshot(access_token  = access_token,
                                                               date          = date,
                                                               positions     = positions,
@@ -88,6 +92,13 @@ dashboard_risk_snapshot <- function(access_token, date, positions, risk_measure,
                                                               horizon       = horizon,
                                                               signif_level  = signif_level,
                                                               volatility_id = volatility_id)
+  
+  if(!is.null(out_workflow_risk_snapshot[["status_code"]])){
+    if(out_workflow_risk_snapshot[["status_code"]] != 200){
+      return(out_workflow_risk_snapshot)
+    }
+  }
+  
   if(nrow(out_workflow_risk_snapshot[["positions_unmapped"]]) > 0){
     warning(paste("Some position was not recognised adn have been left out: ", paste(out_workflow_risk_snapshot[["positions_unmapped"]]$SYMBOL, collapse = ", ")))
   }

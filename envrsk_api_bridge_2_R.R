@@ -117,7 +117,8 @@ get_access_token <- function(usr_id, usr_pwd){
     return(httr::content(get_access_token))
   }
   access_token <- httr::content(get_access_token)
-  return(list("access-token"        = access_token,
+  return(list("status-code"         = 200,
+              "access-token"        = access_token,
               "access-token-expiry" = Sys.time() + (24*60*60 - 60)))
 
 }
