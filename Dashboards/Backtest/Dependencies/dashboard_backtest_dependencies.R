@@ -7,7 +7,7 @@ usePackage <- function(p)
     install.packages(p, dep = TRUE)
   require(p, character.only = TRUE)
 }
-pckg <- c("data.table", "jsonlite", "httr", "keyring", 
+pckg <- c("data.table", "jsonlite", "httr", 
           "flexdashboard", "ggplot2", 
           "knitr", "kableExtra")
 # In case one or more of the packages are not installed they will be installed
