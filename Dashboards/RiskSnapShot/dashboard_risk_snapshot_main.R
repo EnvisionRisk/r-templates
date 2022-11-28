@@ -2,11 +2,7 @@ options(scipen=999)
 
 #### DEPENDENCIES ####
 source("envrsk_api_bridge_2_R.R")
-source("Dashboards/RiskSnapShot/dashboard_risk_snapshot_dependencies.R")
-source("Dashboards/RiskSnapShot/dashboard_risk_snapshot_plot.R")
-
-library(data.tree)
-library(data.table)
+source("Dashboards/RiskSnapShot/Dependencies/dashboard_risk_snapshot_dependencies.R")
 
 #### CREDENTIALS ####
 # Provide credentials - email and password. In case you have not yet received 

@@ -2,10 +2,7 @@ options(scipen=999)
 
 #### DEPENDENCIES ####
 source("envrsk_api_bridge_2_R.R")
-source("Demo/RiskAggregation/risk_aggregation_dependencies.R")
-
-library(data.tree)
-library(data.table)
+source("Demo/RiskAggregation/Dependencies/risk_aggregation_dependencies.R")
 
 #### CREDENTIALS ####
 # Provide credentials - email and password. In case you have not yet received 

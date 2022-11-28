@@ -9,6 +9,9 @@ pckg <- c("data.tree")
 # In case one or more of the packages are not installed they will be installed
 sapply(pckg, usePackage)
 
+library(data.tree)
+library(data.table)
+
 #******************************************************************************
 #*
 #### HELPERS #### 

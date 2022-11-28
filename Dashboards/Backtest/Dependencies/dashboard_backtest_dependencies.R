@@ -19,7 +19,7 @@ library(ggplot2)
 library(knitr)
 library(kableExtra)
 
-source("Dashboards/Backtest/dashboard_backtest_plot.R")
+source("Dashboards/Backtest/Dependencies/dashboard_backtest_plot.R")
 
 read.excel <- function(header=TRUE,...) {
   read.table("clipboard",sep="\t",header=header,...)
@@ -82,7 +82,7 @@ dashboard_backtest <- function(access_token, backtestdata, base_cur, signif_leve
   
   random_id <- IdGenerator(1)
   output_file_name <- paste0("Report_Backtest_", out_workflow_backtest$Input$date, "_id_", random_id)
-  suppressWarnings(rmarkdown::render(input       = "/Dashboards/Backtest/dashboard_backtest.Rmd",
+  suppressWarnings(rmarkdown::render(input       = "/Dashboards/Backtest/Dependencies/dashboard_backtest.Rmd",
                                      output_file = paste0(getwd(), "/Output/", output_file_name, ".html"), 
                                      params      = list(calc_backtest  = out_workflow_backtest,
                                                         set_title      = title),
