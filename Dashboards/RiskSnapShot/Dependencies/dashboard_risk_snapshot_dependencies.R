@@ -20,7 +20,7 @@ library(ggplot2)
 library(knitr)
 library(kableExtra)
 
-source("Dashboards/RiskSnapShot/dashboard_risk_snapshot_plot.R")
+source("Dashboards/RiskSnapShot/Dependencies/dashboard_risk_snapshot_plot.R")
 
 read.excel <- function(header=TRUE,...) {
   read.table("clipboard",sep="\t",header=header,...)
