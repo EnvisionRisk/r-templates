@@ -1,0 +1,115 @@
+---
+date: '`r paste0("Report created at: ", format(Sys.time(),"%A, %B %d, %Y %H:%M:%S"))`'
+output:
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    storyboard: false
+    logo: www/logo-icon.png
+    self_contained: true
+params: 
+  calc_backtest: NA
+  set_title: NA
+---
+
+---
+title: `r params$set_title`
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(knitr)
+library(gt)
+library(ggplot2)
+```
+<script>
+  $('.navbar-logo').wrap('<a href="https://www.envisionrisk.com" target=_blank>');
+</script>
+
+
+<style>
+  .navbar, [data-toggle=tab], .navbar-brand  {   background-color:#AEC0C9;   border-color:black;   color:white; }
+  
+  .navbar-logo img {
+    position: absolute;
+    right: 0px;
+  }
+  
+  .navbar-inverse .navbar-nav > li > a:hover,
+  .navbar-inverse .navbar-nav > li > a:focus {
+    background-color: #27647B;
+      color: white;
+  }
+  .navbar-inverse .navbar-nav > .active > a,
+  .navbar-inverse .navbar-nav > .active > a:hover,
+  .navbar-inverse .navbar-nav > .active > a:focus {
+    color: white;
+    background-color: #27647B;
+  }
+  .navbar-inverse .navbar-toggle:hover,
+  .navbar-inverse .navbar-toggle:focus {
+    background-color: #27647B;
+  }
+  .navbar-inverse .navbar-collapse,
+  .navbar-inverse .navbar-form {
+    border-color: #27647B;
+  }
+</style>
+
+## Column {data-width=10%}
+
+#### **Assumptions**
+
+### Base Currency {data-height=15%}
+```{r}
+color_classic_trustworthy <- c("#CA3542", "#27647B", "#849FAD", "#AEC0C9", "#57575F")  
+flexdashboard::valueBox(params$calc_backtest$Input$base_cur, "Base Currency", icon = "fas fa-money-bill", color = color_classic_trustworthy[3])
+```
+
+### Signif Value {data-height=15%}
+```{r}
+    flexdashboard::valueBox(paste(round(100*params$calc_backtest$Input$signif_level, 1), "%", sep=""), "Significance Level", icon = "fas fa-crosshairs", color = color_classic_trustworthy[5])
+```
+
+Column {data-width=55%}
+-----------------------------------------------------------------------
+
+### Input data for the the backtest
+
+```{r, fig.width=10, fig.height=8}
+  suppressMessages(envrsk_backtest_dashboard_ts(params$calc_backtest$Input$backtestdata,
+                                                params$calc_backtest$Input$base_cur))
+```
+
+> The figure shows daily Value-at-risk & Expected Shortfall risk predictions together with daily Profit/Loss observations. The "red" dots highlights the Value-at-Risk-events where the Profit/Loss is worse (more negetive) than predicted by Value-at-Risk. 
+
+Column {data-width=25%}
+-----------------------------------------------------------------------
+
+### Summary of the backtest {data-height=60%}
+
+```{r, fig.width=6, fig.height=8}
+  suppressMessages(envrsk_backtest_dashboard_summary_risk(params$calc_backtest$Output))
+```
+
+> The summary of the backtest is created based on the daily input-values 
+for Profit/Loss, Value-at-Risk and Expected-Shortfall. The p-value can 
+be interpretated as a likelihood of observing an even worse outcome 
+than observed (i.e. more frequent loss-events for Value-at-Risk and 
+more severe losses for Expected-Shortfall) under the assumption that the 
+model is accurate (the null hypothesis). In case where the p-value is low 
+this is used as evidence against the hypothesis and hence conclude that 
+the model show signs of not being accurate.   
+
+Column {data-width=10%}
+-----------------------------------------------------------------------
+
+### P-value Interpretation 
+
+```{r}
+  suppressMessages(envrsk_backtest_dashboard_p_value_interpretation_table())
+```
+
+> The interpretation of 'p-value < 10%' is that the p-value is higher
+than 5% but lower than 10%. The same rationale for the rest of the p-values.
+We dont calculate an exact p-value, but only calculte it for certain cutoff 
+values.

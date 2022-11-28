@@ -2,11 +2,7 @@ options(scipen=999)
 
 #### DEPENDENCIES ####
 source("envrsk_api_bridge_2_R.R")
-source("Dashboards/RiskSnapShot/dashboard_risk_snapshot_dependencies.R")
-source("Dashboards/RiskSnapShot/dashboard_risk_snapshot_plot.R")
-
-library(data.tree)
-library(data.table)
+source("Dashboards/Backtest/dashboard_backtest_dependencies.R")
 
 #### CREDENTIALS ####
 # Provide credentials - email and password. In case you have not yet received 
@@ -31,25 +27,15 @@ access_token    <- my_access_token[["access-token"]]
 print(paste0("The access-token is valid until: ", my_access_token[["access-token-expiry"]]))
 
 #******************************************************************************
-#*
-#### INPUT for the demonstration - date, volatility_id and portfolio positions
-#*
-##******************************************************************************
-# Portfolio positions (predefined example portfolio is available in the 
-# '/Data' folder)
-demo_port <- base::readRDS("Data/example_port_structure.rds")
+#### Load the backtest data from the working directory ####
+#******************************************************************************
+# Portfolio backtest (Th example backtest data is available in the '/Data' folder)
+demo_backtestdata <- data.table::data.table(base::readRDS("Data/backtestdata.rds"))
 
-#******************************************************************************
-#### Create the risk-snapshot dashboard ####
-# The dashboard will be written to the folder '/Output'
-#******************************************************************************
-# In case the access-token has expired - request a new one.
-dashboard_risk_snapshot(
+# Create the backtest dashboard. 
+dashboard_backtest(
     access_token,
-    positions     = demo_port,
-    date          = "2022-11-15",
-    volatility_id = "point_in_time",
-    base_cur      = "EUR",
-    risk_measure  = "ES",
-    signif_level  = 0.975,
-    horizon       = 1)
+    backtestdata = demo_backtestdata,
+    base_cur     = "DKK",
+    signif_level = 0.975,
+    title        = "60/40 ETF")

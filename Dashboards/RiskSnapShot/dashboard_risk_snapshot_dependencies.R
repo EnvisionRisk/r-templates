@@ -100,7 +100,7 @@ dashboard_risk_snapshot <- function(access_token, date, positions, risk_measure,
   }
   
   if(nrow(out_workflow_risk_snapshot[["positions_unmapped"]]) > 0){
-    warning(paste("Some position was not recognised adn have been left out: ", paste(out_workflow_risk_snapshot[["positions_unmapped"]]$SYMBOL, collapse = ", ")))
+    warning(paste("Some position was not recognised and have been left out: ", paste(out_workflow_risk_snapshot[["positions_unmapped"]]$SYMBOL, collapse = ", ")))
   }
   random_id <- IdGenerator(1)
   output_file_name <- paste0("Report_Risk_Snapshot_", out_workflow_risk_snapshot$Input$date, "_id_", random_id)

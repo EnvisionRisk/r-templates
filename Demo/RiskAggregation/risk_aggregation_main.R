@@ -49,112 +49,66 @@ print(paste0("The access-token is valid until: ", my_access_token[["access-token
 
 #******************************************************************************
 #*
-#### INPUT for the demonstration - date, volatility_id and portfolio positions
+#### INPUT for the demonstration - portfolio positions, date and volatility_id
 #*
 ##******************************************************************************
-demo_date          <- "2022-11-15"    # A date in ISO8601 format ('yyyy-mm-dd'). The date has to be after '2018-01-01'
-demo_volatility_id <- "point_in_time" # choices: {point_in_time, through_the_cycle, downturn, severe_stress, extreme_stress}
-
-# Portfolio positions (predefined example portfolio is available in the 
-# '/Data' folder)
+# Portfolio positions (predefined example portfolio is available in the '/Data' folder)
 demo_port <- base::readRDS("Data/example_port_structure.rds")
 
 #### Alternatively download the portfolio-file used for the demonstration from an external location ####
 #demo_port <- base::readRDS(base::url("https://www.dropbox.com/s/h54j08xb5envg4p/example_port_structure.rds?raw=1"))
 #base::closeAllConnections()
 
-# To see a list of available instruments (symbols):
-# dt_available_instrumements <- envrsk_instrument_search(access_token = access_token, valid_at = demo_date)
+# In case you want to get a list of available instruments (symbols) to use for your own portfolio construction:
+# dt_available_instrumements <- envrsk_instrument_search(access_token = access_token, valid_at = Sys.Date())
 # dt_available_instrumements
 
 #******************************************************************************
 #*
-#### AGGREGATION, simple portfolio structure ####
+#### DEMONSTRATION - user defined portfolio structure - unconditional risk ####
 #*
 #******************************************************************************
-# Call the EnvisionRisk API. 
-system.time(
-  demo_port_risk_out <- envrsk_portfolio_risk_regular(
+# Call the EnvisionRisk API. The API endpoint are called through the R-specific 
+# function 'envrsk_portfolio_risk_regular'. This function takes care of making 
+# the input data ready for the API request and formatting the response from the 
+# API into R-specific data structures. The output from the API is saved into the
+# variable 'demo_port_risk_out'.
+demo_port_risk_out <- envrsk_portfolio_risk_regular(
     access_token  = access_token, 
-    date          = demo_date, 
-    positions     = demo_port[,.(symbol, position_type, quantity)],
-    volatility_id = demo_volatility_id,
-    signif_level  = 0.975,
-    horizon       = 1,
-    base_cur      = "EUR")
-)
-
-# Retain the data that we need from API request (demo_port_risk_out)
-demo_port_risk     <- format_portfolio_risk(demo_port_risk_out)
-
-# Transform the portfolio to a data.tree object and rename the ES column to Risk (more pleasing for the eye)
-demo_port_tree <- data.tree::as.Node(demo_port_risk)
-
-# Sort the data-tree
-data.tree::Sort(demo_port_tree, "position_type", "ES", decreasing = TRUE)
-
-# Format the data-tree
-data.tree::SetFormat(demo_port_tree, "quantity", formatFun = function(x) {if(is.na(x)){""} else {format(round(x, 0), nsmall=0, big.mark=",")}})
-data.tree::SetFormat(demo_port_tree, "ES",       formatFun = function(x) format(round(as.numeric(x), 0), nsmall=0, big.mark=","))
-
-# SHOW THE INPUT AS A DATA-TREE
-# print(demo_port_tree, 
-#       "Position Type"   = "position_type", 
-#       "Instrument Name" = "label", 
-#       "Quantity"        = "quantity")
-
-# OUTPUT
-print(demo_port_tree, 
-      "Position Type"   = "position_type", 
-      "Instrument Name" = "label", 
-      "Quantity"        = "quantity", 
-      "Risk"            = "ES")
-
-#******************************************************************************
-#*
-#### DEMONSTRATION - AGGREGATION, user defined portfolio structure ####
-#*
-#******************************************************************************
-# Call the EnvisionRisk API.
-system.time(
-  demo_port_risk_out <- envrsk_portfolio_risk_regular(
-    access_token  = access_token, 
-    date          = demo_date, 
     positions     = demo_port,
-    volatility_id = demo_volatility_id,
+    date          = "2022-11-15",
+    volatility_id = "point_in_time",
     signif_level  = 0.975,
     horizon       = 1,
     base_cur      = "EUR")
-)
 
-# Retain the data we need from API call (demo_port_risk_out)
-demo_port_risk     <- format_portfolio_risk(demo_port_risk_out)
+# Retain the data we need from API call.
+demo_port_risk <- format_portfolio_risk(demo_port_risk_out)
 
-# Transform the portfolio to a data.tree object and rename the ES column to Risk (more pleasing for the eye)
+# Transform the portfolio to a data.tree object (more pleasing for the eye)
 demo_port_tree <- data.tree::as.Node(demo_port_risk)
 
-# Sort the data-tree
+# Sort the data-tree by ES
 data.tree::Sort(demo_port_tree, "position_type", "ES", decreasing = TRUE)
 
-# Format the data-tree
+# Format the data-tree column 'quantity' and 'ES'
 data.tree::SetFormat(demo_port_tree, "quantity", formatFun = function(x) {if(is.na(x)){""} else {format(round(x, 0), nsmall=0, big.mark=",")}})
 data.tree::SetFormat(demo_port_tree, "ES",       formatFun = function(x) format(round(as.numeric(x), 0), nsmall=0, big.mark=","))
 
 # SHOW THE INPUT AS A DATA-TREE
 # print(demo_port_tree, 
-#       "Position Type"   = "position_type", 
-#       "Instrument Name" = "label", 
-#       "Quantity"        = "quantity")
+#       "Position Type" = "position_type", 
+#       "Quantity"      = "quantity")
 
-# OUTPUT
+# OUTPUT - where we rename the ES column to 'Risk'
 print(demo_port_tree, 
       "Position Type"   = "position_type", 
       "Instrument Name" = "label", 
       "Quantity"        = "quantity", 
       "Risk"            = "ES")
 
-#### Only show the books (remove the positions)
-# Transform and show only the portfolio levels (Only books)
+
+# In case we only want to see the aggregated levels of the portfolio
 demo_port_tree <- data.tree::as.Node(demo_port_risk[is.na(quantity)])
 
 # Sort the data-tree
