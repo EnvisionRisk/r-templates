@@ -58,7 +58,7 @@ DataTreeToJson <- function(data_tree, splitter = "//"){
 format_portfolio_risk <- function(envrsk_portfolio_out){
   # Merge 'Output' and 'Positions_Mapped' returned from the API 
   my_port_risk <- merge(
-    envrsk_portfolio_out[["Output"]][,.(UID, Location, ES)],
+    envrsk_portfolio_out[["Output"]][,.(UID, Location, VaR, ES)],
     envrsk_portfolio_out[["Positions_Mapped"]][,.(uid, position_type, symbol, "label" = name, quantity)],
     by.x = "UID", by.y = "uid",
     all.x = TRUE)

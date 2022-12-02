@@ -1,6 +1,6 @@
 options(scipen=999)
 
-#### DEPENDENCIES ####
+#### LOAD DEPENDENCIES ####
 source("envrsk_api_bridge_2_R.R")
 source("Demo/2.GenerateBacktestDataset/Dependencies/generate_backtest_dataset_dependencies.R")
 
@@ -54,9 +54,12 @@ dt_port_quantities_splt      <- base::split(dt_port_quantities, dt_port_quantiti
 
 # Set the number of cores. In case you set the number of cores higher than 1 
 # please make sure that your license agreement support the number of threads 
-# chosen. If you select a higher number of cores that supported your request 
-# will be denied which might result is some unexpected behavior.
-n.cores <- 6
+# chosen. If you select a higher number of cores that supported (per your 
+# license agreement) your excess thread-requests will be denied which might 
+# result is some unexpected behavior.
+
+
+n.cores <- 1 #envrsk_get_max_threads(access_token = access_token)
 cl      <- parallel::makeCluster(n.cores)
 
 invisible(parallel::clusterEvalQ(cl, library("data.table")))
@@ -83,13 +86,15 @@ iter_dates   <- names(dt_port_quantities_splt)
 # The speed is around 1-3 calender dates pr thread pr second (depending on the size
 # of the portfolio). Since for backtest there typically is a need to calculate 
 # risk for a large number of dates the below API calls can take a long time to 
-# complete (multiple minutes). Therefore be patient :).
+# complete (several minutes). 
 
-t1           <- proc.time()
+#### Parallel Execution - be patient :) ####
 expected_avg_calc_time_pr_day <- nrow(dt_port_quantities)/length(iter_dates)/20
-time_2_complete <- length(iter_dates) * expected_avg_calc_time_pr_day / max(1, (2/3)*n.cores)
+time_2_complete               <- length(iter_dates) * expected_avg_calc_time_pr_day / max(1, (2/3)*n.cores)
 print(paste0("Expect the calculation time to take more than ", time_2_complete, "seconds"))
 print(paste0("Expect the calculation to complete around ", Sys.time() + time_2_complete))
+
+t1           <- proc.time()
 backtest_out <- parLapply(cl, iter_dates, function(x){
   my_positions    <- dt_port_quantities_splt[[x]][,.(POSITION_ID, POSITION_TYPE, SYMBOL, QUANTITY)]
 
@@ -106,15 +111,15 @@ backtest_out <- parLapply(cl, iter_dates, function(x){
 closeAllConnections()
 proc.time() - t1
 
-# 
+#### Collate the results ####
 backtest_data <- rbindlist(backtest_out)
 backtestdata <- backtest_data[, .("Date" = date, VaR, ES, "PnL" = HypotheticalPnL)]
 
-# Save the dataset to '/Data' folder
-#saveRDS(backtestdata, "Data/backtestdata.rds")
-#write(jsonlite::toJSON(backtestdata), "Data/backtestdata.json")
+#### Save the dataset to '/Data' folder ####
+saveRDS(backtestdata, "Data/backtestdata.rds")
+write(jsonlite::toJSON(backtestdata), "Data/backtestdata.json")
 
-# Plot
+#### Plot the risk estimates together with the observed P&L ####
 backtestdata_melt <- melt.data.table(backtestdata, id.vars = "Date")
 backtestdata_melt[, Date := as.Date(Date)]
 ggplot(backtestdata_melt, aes(x = Date, y = value, colour = variable))+
