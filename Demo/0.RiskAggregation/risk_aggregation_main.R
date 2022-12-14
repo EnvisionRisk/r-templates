@@ -50,7 +50,7 @@ print(paste0("The access-token is valid until: ", my_access_token[["access-token
 #*
 ##******************************************************************************
 # Portfolio positions (predefined example portfolio is available in the '/Data' folder)
-demo_port <- base::readRDS("Data/example_port_structure.rds")
+demo_port_data <- base::readRDS("Data/example_port_structure.rds")
 
 #### Alternatively download the portfolio-file used for the demonstration from an external location ####
 #demo_port <- base::readRDS(base::url("https://www.dropbox.com/s/h54j08xb5envg4p/example_port_structure.rds?raw=1"))
@@ -76,9 +76,10 @@ demo_port <- base::readRDS("Data/example_port_structure.rds")
 #### Value-at-Risk (VaR) & Expected-Shortfall (ES) ####
 #*
 #******************************************************************************
+#undebug(envrsk_portfolio_risk_regular)
 demo_port_risk_out <- envrsk_portfolio_risk_regular(
     access_token  = access_token, 
-    positions     = demo_port,
+    positions     = demo_port_data,
     date          = "2022-11-15",
     volatility_id = "point_in_time",
     signif_level  = 0.975,
@@ -86,109 +87,42 @@ demo_port_risk_out <- envrsk_portfolio_risk_regular(
     base_cur      = "EUR")
 
 # Retain the data we need from API call.
-demo_port_risk <- format_portfolio_risk(demo_port_risk_out)
+dt_demo_port_risk <- format_portfolio_risk(demo_port_risk_out)
 
-# Transform the portfolio to a data.tree object (more pleasing for the eye)
-demo_port_tree <- data.tree::as.Node(demo_port_risk)
-
-# Sort the data-tree by ES
-data.tree::Sort(demo_port_tree, "position_type", "ES", decreasing = TRUE)
-
-# Format the data-tree column 'quantity' and 'ES'
-data.tree::SetFormat(demo_port_tree, "quantity", formatFun = function(x) {if(is.na(x)){""} else {format(round(x, 0), nsmall=0, big.mark=",")}})
-data.tree::SetFormat(demo_port_tree, "VaR",       formatFun = function(x) format(round(as.numeric(x), 0), nsmall=0, big.mark=","))
-data.tree::SetFormat(demo_port_tree, "ES",       formatFun = function(x) format(round(as.numeric(x), 0), nsmall=0, big.mark=","))
-
-# SHOW THE INPUT AS A DATA-TREE
-# print(demo_port_tree, 
-#       "Position Type" = "position_type", 
-#       "Quantity"      = "quantity")
-
-# OUTPUT ES
-print(demo_port_tree, 
-      "Position Type"   = "position_type", 
-      "Instrument Name" = "label", 
-      "Quantity"        = "quantity",
-      "Expected-Shortfall" = "ES")
-
-# OUTPUT VaR and ES
-print(demo_port_tree, 
-      "Position Type"      = "position_type", 
-      "Instrument Name"    = "label", 
-      "Quantity"           = "quantity", 
-      "Value-at-Risk"      = "VaR",
-      "Expected-Shortfall" = "ES")
-
-#******************************************************************************
-#*
-#### ONLY SHOW THE AGGERGATED ROWS ####
-#*
-#******************************************************************************
-# In case we only want to see the aggregated levels of the portfolio
-demo_port_tree <- data.tree::as.Node(demo_port_risk[is.na(quantity)])
-
-# Sort the data-tree
-data.tree::Sort(demo_port_tree, "ES")
-data.tree::SetFormat(demo_port_tree, "quantity", formatFun = function(x) {if(is.na(x)){""} else {format(round(x, 0), nsmall=0, big.mark=",")}})
-
-# OUTPUT
-print(demo_port_tree,
-      "Value-at-Risk"      = "VaR",
-      "Expected-Shortfall" = "ES")
-
-#******************************************************************************
-#*
-#### STRESS TEST ####
-#*
-#******************************************************************************
-demo_port_risk_out <- envrsk_portfolio_risk_regular(
+demo_port_stress_out <- envrsk_portfolio_risk_regular(
   access_token  = access_token, 
-  positions     = demo_port,
+  positions     = demo_port_data,
   date          = "2022-11-15",
   volatility_id = "downturn",
-  signif_level  = 0.975,
+  signif_level  = 0.99,
   horizon       = 10,
   base_cur      = "EUR")
 
 # Retain the data we need from API call.
-demo_port_risk <- format_portfolio_risk(demo_port_risk_out)
+dt_demo_port_stress <- format_portfolio_risk(demo_port_stress_out)
+
+# Merge
+dt_demo_port <- merge(dt_demo_port_risk[,.(pathString, position_type, label, quantity, "Value-at-Risk" = VaR, "Expected-Shortfall" = ES)],
+                      dt_demo_port_stress[,.("Stress-Test" = ES, pathString)],
+                      by = "pathString")
 
 # Transform the portfolio to a data.tree object (more pleasing for the eye)
-demo_port_tree <- data.tree::as.Node(demo_port_risk)
+demo_port <- data.tree::as.Node(dt_demo_port)
 
 # Sort the data-tree by ES
-data.tree::Sort(demo_port_tree, "position_type", "ES", decreasing = TRUE)
+data.tree::Sort(demo_port, "position_type", "Stress-Test", decreasing = TRUE)
 
 # Format the data-tree column 'quantity' and 'ES'
-data.tree::SetFormat(demo_port_tree, "quantity", formatFun = function(x) {if(is.na(x)){""} else {format(round(x, 0), nsmall=0, big.mark=",")}})
-data.tree::SetFormat(demo_port_tree, "VaR",       formatFun = function(x) format(round(as.numeric(x), 0), nsmall=0, big.mark=","))
-data.tree::SetFormat(demo_port_tree, "ES",       formatFun = function(x) format(round(as.numeric(x), 0), nsmall=0, big.mark=","))
+data.tree::SetFormat(demo_port, "quantity", formatFun = function(x) {if(is.na(x)){""} else {format(round(x, 0), nsmall=0, big.mark=",")}})
+data.tree::SetFormat(demo_port, "Value-at-Risk",  formatFun = function(x) format(round(as.numeric(x), 0), nsmall=0, big.mark=","))
+data.tree::SetFormat(demo_port, "Expected-Shortfall",  formatFun = function(x) format(round(as.numeric(x), 0), nsmall=0, big.mark=","))
+data.tree::SetFormat(demo_port, "Stress-Test",       formatFun = function(x) format(round(as.numeric(x), 0), nsmall=0, big.mark=","))
 
-# SHOW THE INPUT AS A DATA-TREE
-# print(demo_port_tree, 
-#       "Position Type" = "position_type", 
-#       "Quantity"      = "quantity")
-
-# OUTPUT ES
-print(demo_port_tree, 
+print(demo_port, 
       "Position Type"   = "position_type", 
       "Instrument Name" = "label", 
-      "Quantity"        = "quantity",
-      "Stress Test"     = "ES")
+      "Value-at-Risk",
+      "Expected-Shortfall",
+      "Stress-Test")
 
-#******************************************************************************
-#*
-#### ONLY SHOW THE AGGERGATED ROWS ####
-#*
-#******************************************************************************
-# In case we only want to see the aggregated levels of the portfolio
-demo_port_tree <- data.tree::as.Node(demo_port_risk[is.na(quantity)])
-
-# Sort the data-tree
-data.tree::Sort(demo_port_tree, "ES")
-data.tree::SetFormat(demo_port_tree, "quantity", formatFun = function(x) {if(is.na(x)){""} else {format(round(x, 0), nsmall=0, big.mark=",")}})
-
-# OUTPUT
-print(demo_port_tree, 
-      "Risk" = "ES")
 
