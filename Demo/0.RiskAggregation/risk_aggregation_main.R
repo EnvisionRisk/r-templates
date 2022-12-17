@@ -79,6 +79,7 @@ demo_port_data <- base::readRDS("Data/example_port_structure.rds")
 demo_cur  <- "EUR"
 demo_date <- as.Date("2022-12-13")
 
+# Calculate Risk as point-in-time, 1-day 97.5% Expected-shortfall
 demo_port_risk_out <- envrsk_portfolio_risk_regular(
     access_token  = access_token, 
     positions     = demo_port_data,
@@ -91,6 +92,7 @@ demo_port_risk_out <- envrsk_portfolio_risk_regular(
 # Retain the data we need from API call.
 dt_demo_port_risk <- format_portfolio_risk(demo_port_risk_out)
 
+# Calculate Stress as downturn, 10-day 99.0% Expected-shortfall
 demo_port_stress_out <- envrsk_portfolio_risk_regular(
   access_token  = access_token, 
   positions     = demo_port_data,
@@ -103,6 +105,7 @@ demo_port_stress_out <- envrsk_portfolio_risk_regular(
 # Retain the data we need from API call.
 dt_demo_port_stress <- format_portfolio_risk(demo_port_stress_out)
 
+# Calculate Market-value for the portfolio
 demo_port_perf_out <- envrsk_portfolio_hypothetical_performance(
   access_token  = access_token, 
   positions     = demo_port_data,
@@ -112,7 +115,7 @@ demo_port_perf_out <- envrsk_portfolio_hypothetical_performance(
 # Retain the data we need from API call.
 dt_demo_port_perf <- format_portfolio_perf(demo_port_perf_out)
 
-# Merge
+# Merge the data from the 3 API calls
 dt_demo_port <- merge(
   merge(dt_demo_port_risk[,.(pathString, position_type, label, quantity, "Value-at-Risk" = VaR, "Expected-Shortfall" = ES)],
         dt_demo_port_stress[,.("Stress-Test" = ES, pathString)],
@@ -123,7 +126,7 @@ dt_demo_port <- merge(
 # Transform the portfolio to a data.tree object (more pleasing for the eye)
 demo_port <- data.tree::as.Node(dt_demo_port)
 
-# Sort the data-tree by ES
+# Sort the data-tree by Stress-test
 data.tree::Sort(demo_port, "position_type", "Stress-Test", decreasing = TRUE)
 
 # Format the data-tree column 'quantity' and 'ES'
@@ -139,8 +142,7 @@ print(demo_port,
       "Position Type"   = "position_type", 
       "Instrument Name" = "label", 
       "Quantity"        = "quantity",
-      "MarketValue",
-      "HypotheticalPnL",
+      "Market Value" = "MarketValue",
       "Risk" = "Expected-Shortfall",
       "Stress" = "Stress-Test")
 
