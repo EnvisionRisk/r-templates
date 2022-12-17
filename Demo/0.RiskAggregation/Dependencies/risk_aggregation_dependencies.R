@@ -72,3 +72,21 @@ format_portfolio_risk <- function(envrsk_portfolio_out){
   my_port_risk[, ":=" (Location = NULL, symbol = NULL)]
   return(my_port_risk)
 }
+
+format_portfolio_perf <- function(envrsk_portfolio_out){
+  # Merge 'Output' and 'Positions_Mapped' returned from the API 
+  my_port_risk <- merge(
+    envrsk_portfolio_out[["Output"]][,.(UID, Location, Notational, MarketValue, HypotheticalPnL)],
+    envrsk_portfolio_out[["Positions_Mapped"]][,.(uid, position_type, symbol, "label" = name, quantity)],
+    by.x = "UID", by.y = "uid",
+    all.x = TRUE)
+  
+  # Remove unwanted columns and format the remaining columns
+  my_port_risk[, UID := NULL]
+  my_port_risk[!is.na(symbol), pathString := mapply(do_remove_last, Location, "//")]
+  my_port_risk[is.na(symbol), pathString := Location]
+  my_port_risk[!is.na(symbol), pathString := paste0(pathString, "//", symbol)]
+  my_port_risk[, pathString := gsub("//", "/", pathString)]
+  my_port_risk[, ":=" (Location = NULL, symbol = NULL)]
+  return(my_port_risk)
+}
