@@ -59,6 +59,10 @@ demo_port_data <- base::readRDS("Data/example_port_structure.rds")
 # In case you want to get a list of available instruments (symbols) to use for your own portfolio construction:
 # dt_available_instrumements <- envrsk_instrument_search(access_token = access_token, valid_at = Sys.Date())
 # dt_available_instrumements
+#demo_port_data <- data.table("symbol" = sample(dt_available_instrumements[instrument_type == "single_stock", symbol], 1000))
+demo_port_data[, ":=" (position_type = "single_stock",
+                       quantity      = 1,
+                       location      = "Equity")]
 
 #******************************************************************************
 #*
@@ -76,8 +80,8 @@ demo_port_data <- base::readRDS("Data/example_port_structure.rds")
 #### Value-at-Risk (VaR) & Expected-Shortfall (ES) ####
 #*
 #******************************************************************************
-demo_cur  <- "EUR"
-demo_date <- as.Date("2022-12-13")
+demo_cur  <- "DKK"
+demo_date <- as.Date("2022-12-28")
 
 # Calculate Risk as point-in-time, 1-day 97.5% Expected-shortfall
 demo_port_risk_out <- envrsk_portfolio_risk_regular(
@@ -91,6 +95,9 @@ demo_port_risk_out <- envrsk_portfolio_risk_regular(
 
 # Retain the data we need from API call.
 dt_demo_port_risk <- format_portfolio_risk(demo_port_risk_out)
+dt_demo_port_risk[is.na(VaR)]
+
+#dt_demo_port_risk[is.na(VaR)]
 
 # Calculate Stress as downturn, 10-day 99.0% Expected-shortfall
 demo_port_stress_out <- envrsk_portfolio_risk_regular(
@@ -146,13 +153,13 @@ print(demo_port,
       "Risk" = "Expected-Shortfall",
       "Stress" = "Stress-Test")
 
-print(demo_port, 
-      "Position Type"   = "position_type", 
-      "Instrument Name" = "label", 
-      "Quantity"        = "quantity",
-      "Value-at-Risk",
-      "Expected-Shortfall",
-      "Stress-Test")
+# print(demo_port, 
+#       "Position Type"   = "position_type", 
+#       "Instrument Name" = "label", 
+#       "Quantity"        = "quantity",
+#       "Value-at-Risk",
+#       "Expected-Shortfall",
+#       "Stress-Test")
 
 
 
