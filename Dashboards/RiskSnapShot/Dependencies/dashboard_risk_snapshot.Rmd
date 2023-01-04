@@ -152,9 +152,7 @@ suppressMessages(envrsk_summary_risk(dt_summary_risk,
 Row {data-height=50}
 -------------------------------------
 
-The table below to the left shows the notational and risk broken down by the denomination currency. The area of the figure shows the notational while the colour shows the risk.
-
-The figure below to the right.
+The table below (left) shows the notational exposure and component-risk by currency. The area for each currency shows its notational exposure (pct) while the colour indicates its risk. The figure below (right) shows the top 10 most risky positions and their risk diversification.
 
 Row {data-height=550}
 -------------------------------------
