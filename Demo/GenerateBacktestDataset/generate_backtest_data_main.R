@@ -2,7 +2,7 @@ options(scipen=999)
 
 #### LOAD DEPENDENCIES ####
 source("envrsk_api_bridge_2_R.R")
-source("Demo/2.GenerateBacktestDataset/Dependencies/generate_backtest_dataset_dependencies.R")
+source("Demo/GenerateBacktestDataset/Dependencies/generate_backtest_dataset_dependencies.R")
 
 #### AUTHENTICATE ####
 envrsk_auth_renew_access_token()
@@ -19,7 +19,7 @@ my_signif_level <- 0.975
 
 # Import the daily portfolio positions 'temporal_positions.rds'. The 
 # 'temporal_positions.rds' is generated in the demo 
-# '/Demo/1.PortfolioWeights2Quantities'.
+# '/Demo/PortfolioWeights2Quantities'.
 dt_port_quantities           <- readRDS(paste0(getwd(), "/Data/temporal_positions.rds"))
 dt_port_quantities           <- dt_port_quantities[date < Sys.Date()]
 colnames(dt_port_quantities) <- toupper(colnames(dt_port_quantities))
