@@ -123,6 +123,45 @@ get_access_token <- function(usr_id, usr_pwd){
 
 }
 
+renew_access_token <- function(force_renew = FALSE){
+  renew_flow <- function(){
+    if(Sys.getenv("USR_ID") != ""  & Sys.getenv("USR_PWD") != ""){
+      my_access_token <<- get_access_token(Sys.getenv("USR_ID"), 
+                                           Sys.getenv("USR_PWD"))
+    } else {
+      get_access_token()
+    }
+  }
+  if(force_renew | !exists("my_access_token")){
+    renew_flow()  
+  } else {
+    if(my_access_token[["access-token-expiry"]] < Sys.time()){
+      renew_flow()
+    }
+  }
+  message(paste0("The access-token is valid until: ", as.POSIXct(my_access_token[["access-token-expiry"]])))
+}
+
+set_access_token <- function(){
+  # Provide credentials - email and password. In case you have not yet received 
+  # your personal credentials, contact EnvisionRisk at info@envisionrisk.com
+  Sys.setenv("USR_ID"  = getPass::getPass(msg = "Please provide email: ", noblank = TRUE, forcemask = FALSE))
+  Sys.setenv("USR_PWD" = getPass::getPass(msg = "Please provide password: ", noblank = TRUE, forcemask = FALSE))
+  
+  #### AUTHENTICATIO WITH THE RISK SERVER ####
+  # Retrieve the access-token from the Auth-server.
+  my_access_token <<- get_access_token(Sys.getenv("USR_ID"), 
+                                       Sys.getenv("USR_PWD"))
+  message("access-token has been aquired and is saved into the variable 'my_access_token'")
+}
+
+log_out <- function(){
+  suppressWarnings(rm(list = c("access_token", "my_access_token")))
+  Sys.setenv("USR_ID"  = "")
+  Sys.setenv("USR_PWD" = "")
+}
+
+
 #******************************************************************************
 #### Portfolio ####
 #******************************************************************************
