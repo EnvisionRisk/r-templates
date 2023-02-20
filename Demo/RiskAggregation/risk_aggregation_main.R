@@ -26,6 +26,7 @@ source("Demo/RiskAggregation/Dependencies/risk_aggregation_dependencies.R")
 
 #### AUTHENTICATE ####
 envrsk_auth_renew_access_token()
+access_token <- my_access_token[["access-token"]]
 
 #### IMPORT PORTFOLIO ####
 # Portfolio positions (predefined example portfolio is available in the '/Data' folder)
