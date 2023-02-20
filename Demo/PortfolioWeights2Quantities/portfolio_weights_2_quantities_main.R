@@ -2,7 +2,7 @@ options(scipen=999)
 
 #### DEPENDENCIES ####
 source("envrsk_api_bridge_2_R.R")
-source("Demo/1.PortfolioWeights2Quantities/Dependencies/portfolio_weights_2_quantities_dependencies.R")
+source("Demo/PortfolioWeights2Quantities/Dependencies/portfolio_weights_2_quantities_dependencies.R")
 
 #### AUTHENTICATE ####
 envrsk_auth_renew_access_token()
