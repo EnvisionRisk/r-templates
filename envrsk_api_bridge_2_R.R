@@ -3,16 +3,22 @@
 #******************************************************************************
 usePackage <- function(p)
 {
-  if (!is.element(p, installed.packages()[,1]))
-    install.packages(p, dep = TRUE)
+  if (!is.element(p, utils::installed.packages()[,1]))
+    utils::install.packages(p, dep = TRUE)
   require(p, character.only = TRUE)
 }
 pckg <- c("data.table", "jsonlite", "httr", "parallel", "getPass")
 
 # In case one or more of the packages are not installed they will be installed
-sapply(pckg, usePackage)
+suppressWarnings(sapply(pckg, usePackage))
 
-library(data.table)
+box::use(
+  data.table[...],              
+  jsonlite,                   
+  httr,  
+  parallel,
+  getPass
+) 
 
 read.excel <- function(header=TRUE,...) {
   read.table("clipboard",sep="\t",header=header,...)
@@ -94,7 +100,8 @@ envrsk_get <- function(access_token,
 #******************************************************************************
 #### Auth ####
 #******************************************************************************
-get_access_token <- function(usr_id, usr_pwd){
+#' @export
+envrsk_auth_get_access_token <- function(usr_id, usr_pwd){
   # Query parameters
   .query <- list("usr_id"  = usr_id,
                  "usr_pwd" = usr_pwd)
@@ -123,13 +130,14 @@ get_access_token <- function(usr_id, usr_pwd){
 
 }
 
-renew_access_token <- function(force_renew = FALSE){
+#' @export
+envrsk_auth_renew_access_token <- function(force_renew = FALSE){
   renew_flow <- function(){
-    if(Sys.getenv("USR_ID") != ""  & Sys.getenv("USR_PWD") != ""){
-      my_access_token <<- get_access_token(Sys.getenv("USR_ID"), 
-                                           Sys.getenv("USR_PWD"))
+    if(Sys.getenv("USR_ID") != "" & Sys.getenv("USR_PWD") != ""){
+      my_access_token <<- envrsk_auth_get_access_token(Sys.getenv("USR_ID"), 
+                                                       Sys.getenv("USR_PWD"))
     } else {
-      get_access_token()
+      envrsk_auth_set_access_token()
     }
   }
   if(force_renew | !exists("my_access_token")){
@@ -142,7 +150,8 @@ renew_access_token <- function(force_renew = FALSE){
   message(paste0("The access-token is valid until: ", as.POSIXct(my_access_token[["access-token-expiry"]])))
 }
 
-set_access_token <- function(){
+#' @export
+envrsk_auth_set_access_token <- function(){
   # Provide credentials - email and password. In case you have not yet received 
   # your personal credentials, contact EnvisionRisk at info@envisionrisk.com
   Sys.setenv("USR_ID"  = getPass::getPass(msg = "Please provide email: ", noblank = TRUE, forcemask = FALSE))
@@ -150,12 +159,13 @@ set_access_token <- function(){
   
   #### AUTHENTICATIO WITH THE RISK SERVER ####
   # Retrieve the access-token from the Auth-server.
-  my_access_token <<- get_access_token(Sys.getenv("USR_ID"), 
-                                       Sys.getenv("USR_PWD"))
+  my_access_token <<- envrsk_auth_get_access_token(Sys.getenv("USR_ID"), 
+                                                   Sys.getenv("USR_PWD"))
   message("access-token has been aquired and is saved into the variable 'my_access_token'")
 }
 
-log_out <- function(){
+#' @export
+envrsk_auth_log_out <- function(){
   suppressWarnings(rm(list = c("access_token", "my_access_token")))
   Sys.setenv("USR_ID"  = "")
   Sys.setenv("USR_PWD" = "")
@@ -165,6 +175,7 @@ log_out <- function(){
 #******************************************************************************
 #### Portfolio ####
 #******************************************************************************
+#' @export
 envrsk_portfolio_risk_regular <- function(access_token,
                                           date,
                                           positions,
@@ -195,6 +206,7 @@ envrsk_portfolio_risk_regular <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_portfolio_risk_component <- function(access_token,
                                             date,
                                             positions,
@@ -225,6 +237,7 @@ envrsk_portfolio_risk_component <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_portfolio_delta_vector <- function(access_token,
                                           date,
                                           positions,
@@ -254,6 +267,7 @@ envrsk_portfolio_delta_vector <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_portfolio_economic_capital_regular <- function(access_token,
                                                       date,
                                                       positions,
@@ -286,6 +300,7 @@ envrsk_portfolio_economic_capital_regular <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_portfolio_economic_capital_component <- function(access_token,
                                                         date,
                                                         positions,
@@ -318,6 +333,7 @@ envrsk_portfolio_economic_capital_component <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_portfolio_portfolio_hyp_rskadj_perf_regular <- function(access_token,
                                                                date,
                                                                positions,
@@ -350,6 +366,7 @@ envrsk_portfolio_portfolio_hyp_rskadj_perf_regular <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_portfolio_portfolio_hyp_rskadj_perf_component <- function(access_token,
                                                                  date,
                                                                  positions,
@@ -382,6 +399,7 @@ envrsk_portfolio_portfolio_hyp_rskadj_perf_component <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_portfolio_hypothetical_performance <- function(access_token,
                                                       date,
                                                       positions,
@@ -404,6 +422,7 @@ envrsk_portfolio_hypothetical_performance <- function(access_token,
   return(out)
 }
 
+#' @export
 process_portfolio_return_values <- function(res_out, simplify){
   if(res_out[["status_code"]] == 200){
     out <- res_out[["content"]]
@@ -430,6 +449,7 @@ process_portfolio_return_values <- function(res_out, simplify){
   }
 }
 
+#' @export
 #******************************************************************************
 #### Instrument ####
 #******************************************************************************
@@ -462,6 +482,7 @@ envrsk_instrument_search <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_instrument_performance <- function(access_token,
                                           symbols,
                                           base_cur  = NULL,
@@ -502,6 +523,7 @@ envrsk_instrument_performance <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_instrument_performance_raw <- function(access_token,
                                               symbols,
                                               from      = NULL,
@@ -540,6 +562,7 @@ envrsk_instrument_performance_raw <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_instrument_value_at_risk <- function(access_token,
                                      date,
                                      symbols,
@@ -579,6 +602,7 @@ envrsk_instrument_value_at_risk <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_instrument_value_at_risk_raw <- function(access_token,
                                          date,
                                          symbols,
@@ -616,6 +640,7 @@ envrsk_instrument_value_at_risk_raw <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_instrument_expected_shortfall <- function(access_token,
                                           date,
                                           symbols,
@@ -655,6 +680,7 @@ envrsk_instrument_expected_shortfall <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_instrument_expected_shortfall_raw <- function(access_token,
                                               date,
                                               symbols,
@@ -692,6 +718,7 @@ envrsk_instrument_expected_shortfall_raw <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_instrument_delta_vector <- function(access_token,
                                            date,
                                            symbols,
@@ -729,6 +756,7 @@ envrsk_instrument_delta_vector <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_instrument_delta_vector_raw <- function(access_token,
                                                date,
                                                symbols,
@@ -766,6 +794,7 @@ envrsk_instrument_delta_vector_raw <- function(access_token,
 #******************************************************************************
 #### Time Serie ####
 #******************************************************************************
+#' @export
 envrsk_market_price <- function(access_token,
                                 symbols,
                                 base_cur = NULL){
@@ -797,6 +826,7 @@ envrsk_market_price <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_market_price_raw <- function(access_token,
                                     symbols){
   end_point <- "market-price-raw"
@@ -827,6 +857,7 @@ envrsk_market_price_raw <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_market_volatility <- function(access_token,
                                      symbols){
   end_point <- "market-volatility"
@@ -857,6 +888,7 @@ envrsk_market_volatility <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_market_stress_volatility <- function(access_token,
                                             symbols){
   end_point <- "market-stress-volatility"
@@ -892,6 +924,7 @@ envrsk_market_stress_volatility <- function(access_token,
 #******************************************************************************
 
 # workflow-risk-snapshot #
+#' @export
 envrsk_workflow_risk_snapshot <- function(access_token,
                                           date,
                                           positions,
@@ -936,6 +969,7 @@ envrsk_workflow_risk_snapshot <- function(access_token,
 }
 
 # workflow-backtest #
+#' @export
 envrsk_workflow_backtest <- function(access_token,
                                      backtestdata,
                                      base_cur      = NULL,
@@ -969,6 +1003,7 @@ envrsk_workflow_backtest <- function(access_token,
   return(out)
 }
 
+#' @export
 envrsk_workflow_weight_2_quantities <- function(access_token, dt_snapshot_weight,
                                                 init_port_market_value, base_cur,
                                                 is_wide = FALSE, to_date = NULL){
@@ -1009,6 +1044,7 @@ envrsk_workflow_weight_2_quantities <- function(access_token, dt_snapshot_weight
 #******************************************************************************
 #### Manifest ####
 #******************************************************************************
+#' @export
 envrsk_get_manifest <- function(access_token){
   end_point <- "get-manifest"
   api_url <- paste0(base_url, base_path, end_point)
@@ -1033,6 +1069,7 @@ envrsk_get_manifest <- function(access_token){
 #### Miscellaneous ####
 #******************************************************************************
 # common-decorate-table-id #
+#' @export
 envrsk_decorate_portfolio_id <- function(access_token, positions, simplify = TRUE){
   end_point <- "decorate-table-id"
   api_url <- paste0(base_url, base_path, end_point)
@@ -1060,6 +1097,7 @@ envrsk_decorate_portfolio_id <- function(access_token, positions, simplify = TRU
 }
 
 # common-decorate-position-id #
+#' @export
 envrsk_decorate_position_id <- function(access_token, positions, simplify = TRUE){
   end_point <- "decorate-position-id"
   api_url <- paste0(base_url, base_path, end_point)

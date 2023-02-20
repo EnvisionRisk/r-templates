@@ -1,28 +1,3 @@
-options(scipen=999)
-
-#### DEPENDENCIES ####
-source("envrsk_api_bridge_2_R.R")
-source("Demo/0.RiskAggregation/Dependencies/risk_aggregation_dependencies.R")
-
-#### CREDENTIALS ####
-# Provide credentials - email and password. In case you have not yet received 
-# your personal credentials, contact EnvisionRisk at info@envisionrisk.com
-Sys.setenv("USR_ID"  = getPass::getPass(msg = "Please provide email: ", noblank = TRUE, forcemask = FALSE))
-Sys.setenv("USR_PWD" = getPass::getPass(msg = "Please provide password: ", noblank = TRUE, forcemask = FALSE))
-
-#### AUTHENTICATIO WITH THE RISK SERVER ####
-# Retrieve the access-token from the Auth-server.
-my_access_token <- get_access_token(Sys.getenv("USR_ID"), 
-                                    Sys.getenv("USR_PWD"))
-
-# Extract the access-token. The access-token is valid for 24 hours after
-# it has been requested. 
-access_token    <- my_access_token[["access-token"]]
-
-#The access-token is valid until;
-print(paste0("The access-token is valid until: ", my_access_token[["access-token-expiry"]]))
-
-
 #### DEMONSTRATION ####
 #******************************************************************************
 # The purpose of the demonstration is to illustrate how to decorate a 
@@ -43,14 +18,22 @@ print(paste0("The access-token is valid until: ", my_access_token[["access-token
 # API into R-specific data structures. The output from the API is saved into the
 # variable 'demo_port_risk_out'.
 #******************************************************************************
+options(scipen=999)
 
-#### SETTINGS ####
-demo_cur  <- "DKK"
-demo_date <- as.Date("2023-01-01")
+#### DEPENDENCIES ####
+source("envrsk_api_bridge_2_R.R")
+source("Demo/RiskAggregation/Dependencies/risk_aggregation_dependencies.R")
+
+#### AUTHENTICATE ####
+envrsk_auth_renew_access_token()
 
 #### IMPORT PORTFOLIO ####
 # Portfolio positions (predefined example portfolio is available in the '/Data' folder)
 demo_port_data <- base::readRDS("Data/treasury_example_port.rds")
+
+#### SETTINGS ####
+demo_cur  <- "DKK"
+demo_date <- as.Date("2023-01-01")
 
 #### API REQUEST ####
 # Calculate Risk as point-in-time, 1-day 97.5% Expected-shortfall
