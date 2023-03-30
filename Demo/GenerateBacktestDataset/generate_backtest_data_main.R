@@ -73,9 +73,10 @@ iter_dates   <- names(dt_port_quantities_splt)
 #### Parallel Execution - be patient :) ####
 expected_avg_calc_time_pr_day <- nrow(dt_port_quantities)/length(iter_dates)/20
 time_2_complete               <- length(iter_dates) * expected_avg_calc_time_pr_day / max(1, (2/3)*n.cores)
-print(paste0("Expect the calculation time to take more than ", time_2_complete, "seconds"))
+print(paste0("Expect the calculation time to take more than ", round(time_2_complete, 0), "seconds"))
 print(paste0("Expect the calculation to complete around ", Sys.time() + time_2_complete))
 
+tail(iter_dates)
 t1           <- proc.time()
 backtest_out <- parLapply(cl, iter_dates, function(x){
   my_positions    <- dt_port_quantities_splt[[x]][,.(POSITION_ID, POSITION_TYPE, SYMBOL, QUANTITY)]
