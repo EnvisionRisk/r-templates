@@ -1,12 +1,5 @@
-usePackage <- function(p)
-{
-  if (!is.element(p, installed.packages()[,1]))
-    install.packages(p, dep = TRUE)
-  require(p, character.only = TRUE)
-}
-pckg <- c("data.tree")
-
 # In case one or more of the packages are not installed they will be installed
+pckg <- c("data.tree")
 sapply(pckg, usePackage)
 
 library(data.tree)

@@ -8,25 +8,13 @@
 # Expected-Shortfall(97.5%) and the risk is denominated in EUR. Other choices 
 # are possible and can be customized by the user. See the API documentation 
 # (https://envisionrisk.stoplight.io/) to see the full list of customizations.
-#
-# The risk is calculated using the endpoint:
-# 'https://api.envisionrisk.com/v1/themis/portfolio-risk-component' 
-#
-# Call the EnvisionRisk API. The API endpoint are called through the R-specific 
-# function 'envrsk_portfolio_risk_regular'. This function takes care of making 
-# the input data ready for the API request and formatting the response from the 
-# API into R-specific data structures. The output from the API is saved into the
-# variable 'demo_port_risk_out'.
 #******************************************************************************
-options(scipen=999)
-
 #### DEPENDENCIES ####
-source("envrsk_api_bridge_2_R.R")
-source("Demo/RiskAggregation/Dependencies/risk_aggregation_dependencies.R")
+# *** Common dependencies ***
+source("init_r_templates.R")
 
-#### AUTHENTICATE ####
-envrsk_auth_renew_access_token()
-access_token <- my_access_token[["access-token"]]
+# *** Specific dependencies ***
+source("Demo/RiskAggregation/Dependencies/risk_aggregation_dependencies.R")
 
 #### IMPORT PORTFOLIO ####
 # Portfolio positions (predefined example portfolio is available in the '/Data' folder)
@@ -34,12 +22,11 @@ demo_port_data <- base::readRDS("Data/treasury_example_port.rds")
 
 #### SETTINGS ####
 demo_cur  <- "DKK"
-demo_date <- as.Date("2023-01-01")
+demo_date <- Sys.Date()
 
 #### API REQUEST ####
 # Calculate Risk as point-in-time, 1-day 97.5% Expected-shortfall
-demo_port_risk_out <- envrsk_portfolio_risk_regular(
-    access_token  = access_token, 
+demo_port_risk_out <- EnvisionRiskRaaS::envrsk_portfolio_risk_regular( 
     positions     = demo_port_data,
     date          = demo_date,
     volatility_id = "point_in_time",
@@ -54,8 +41,7 @@ dt_demo_port_risk[is.na(VaR)]
 #dt_demo_port_risk[is.na(VaR)]
 
 # Calculate Stress as downturn, 10-day 99.0% Expected-shortfall
-demo_port_stress_out <- envrsk_portfolio_risk_regular(
-  access_token  = access_token, 
+demo_port_stress_out <- EnvisionRiskRaaS::envrsk_portfolio_risk_regular(
   positions     = demo_port_data,
   date          = demo_date,
   volatility_id = "downturn",
@@ -67,8 +53,7 @@ demo_port_stress_out <- envrsk_portfolio_risk_regular(
 dt_demo_port_stress <- format_portfolio_risk(demo_port_stress_out)
 
 # Calculate Market-value for the portfolio
-demo_port_perf_out <- envrsk_portfolio_hypothetical_performance(
-  access_token  = access_token, 
+demo_port_perf_out <- EnvisionRiskRaaS::envrsk_portfolio_hypothetical_performance(
   positions     = demo_port_data,
   date          = demo_date,
   base_cur      = demo_cur)

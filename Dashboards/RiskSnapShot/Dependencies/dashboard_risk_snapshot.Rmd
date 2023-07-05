@@ -59,7 +59,7 @@ Summary {data-navmenu="Navigate"}
 Row {data-height=50}
 -------------------------------------
 
-The dashboard is created based on the settings below. It consist of 2 pages: A 'Summary' page and a 'Risk Decomposition' page. The 'Summary' page (the page you are on) contains the context used as well as the portfolio profit/loss distribution. The page 'Risk Decomposition' contains detailed risk information for the top 10 portfolio positions (by market value and risk). Also, page 2 contains information about portfolio diversification. Use the 'Navigate' drop-down menu at the top of the page to navigate between pages. In case you have any question or comments to the dashboard please contact EnvisionRisk at info@envisionrisk.com.
+This dashboard, designed with the following settings, comprises two sections: 'Summary' and 'Risk Decomposition.' The 'Summary' section, which you're currently viewing, provides the portfolio's profit/loss distribution within the given context. In contrast, the 'Risk Decomposition' section offers in-depth risk insights for the top 10 portfolio positions based on market value and risk, along with portfolio diversification details. Use the 'Navigate' dropdown menu atop the page to switch between sections. Should you have any inquiries or feedback about the dashboard, please feel free to reach out to us at support@envisionrisk.com.
 
 Row {data-height=50}
 -------------------------------------
@@ -106,8 +106,8 @@ flexdashboard::valueBox(params$workflow_object$Input$volatility_id, "Volatility 
 Row {data-height=50}
 -------------------------------------
 
-The portfolio uncertainty is best described by the profit/loss (P&L) distribution for the portfolio. The P&L distribution shown below is based on simulating P&L for each individual position and aggregate those into future portfolio P&L scenarios. The P&L distribution for the individual positions are based on EnvisionRisk’s Economic Scenario Generator which simulates future states of the markets for each individual position. Our Economic Scenario Generator is built upon advanced statistical techniques using extreme value distributions and copulas to better captures the special characteristics of financial instruments. Is based on a Monte Carlo simulation approach with 10,000 scenarios for each position. It takes volatility clustering, skewed return distributions and fat-tails into account. These methods are superior at adapting to the stylized characteristics of financial returns. 
-  
+The portfolio's uncertainty is best encapsulated by its profit/loss (P&L) distribution. The displayed P&L distribution is derived from simulating each individual position's P&L and aggregating them into potential future portfolio P&L scenarios. Each position's P&L distribution relies on EnvisionRisk’s Economic Scenario Generator, which forecasts future market conditions per position. This generator employs advanced statistical methods utilizing extreme value distributions and copulas to more accurately capture financial instruments' unique characteristics. It's based on a Monte Carlo simulation approach, comprising 10,000 scenarios per position, acknowledging volatility clustering, skewed return distributions, and fat-tails. Such techniques excel at adapting to the stylized characteristics of financial returns.
+
 
 Row {data-height=750}
 -------------------------------------
@@ -126,8 +126,7 @@ Risk Decomposition {data-orientation=rows, data-navmenu="Navigate"}
 
 Row {data-height=50}
 -------------------------------------
-
-The table below summarizing the market value, risk and diversification effects for the top 10 positions in the portfolio (measured by market value and risk). The absolute numbers are in the base-currency. The 'regular' - or unconditional - risk column shows the individual positions marginal risk, while the 'component' - or conditional - column shows the individual positions risk contribution to the overall portfolio risk. The difference between the regular- and component risk measurements are interpreted is the diversification effect for the position. While the regular risk is always negative, the component risk for individual positions can be positive. A note of caution with regards to the component risk measure: The smaller the weight of the position is, the harder it can be to interpreter the component risk measure for that particular position. In other words for small position weights the component risk measure is more representative of noise than signal.
+The table below presents the market value, risk, and diversification impacts for the portfolio's top 10 positions, gauged by market value and risk, with all absolute figures displayed in the base currency. The 'regular' or 'unconditional' risk column reveals each position's marginal risk, while the 'component' or 'conditional' column demonstrates how each position contributes to the portfolio's overall risk. The diversification effect for a position is interpreted by the difference between the regular and component risk measures. The regular risk is always negative, while the component risk can be positive for individual positions. It's crucial to note that interpreting the component risk measure for positions with smaller weights can be challenging. For such positions, the component risk measure tends to represent noise more than signal.
 
 
 Row {data-height=300}
@@ -152,7 +151,7 @@ suppressMessages(envrsk_summary_risk(dt_summary_risk,
 Row {data-height=50}
 -------------------------------------
 
-The table below (left) shows the notational exposure and component-risk by currency. The area for each currency shows its notational exposure (pct) while the colour indicates its risk. The figure below (right) shows the top 10 most risky positions and their risk diversification.
+The table on the left below illustrates the notional exposure and component-risk by currency. The area for each currency represents its notional exposure (as a percentage), while the color displays its associated risk level. The figure to the right highlights the top 10 riskiest positions, along with their respective risk diversification aspects. This dual-presentation provides an overview of exposure and risk, enabling informed decision-making.
 
 Row {data-height=550}
 -------------------------------------

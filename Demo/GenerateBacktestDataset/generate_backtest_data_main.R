@@ -1,12 +1,5 @@
-options(scipen=999)
-
-#### LOAD DEPENDENCIES ####
-source("envrsk_api_bridge_2_R.R")
+#### DEPENDENCIES ####
 source("Demo/GenerateBacktestDataset/Dependencies/generate_backtest_dataset_dependencies.R")
-
-#### AUTHENTICATE ####
-envrsk_auth_renew_access_token()
-access_token <- my_access_token[["access-token"]]
 
 #******************************************************************************
 #*
