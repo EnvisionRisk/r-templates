@@ -8,7 +8,7 @@ usePackage <- function(p)
 }
 
 # In case one or more of the packages are not installed they will be installed
-pckg <- c("devtools", "usethis", "data.table", "jsonlite", "httr", "rstudioapi", "stringi")
+pckg <- c("devtools", "usethis", "data.table", "jsonlite", "httr", "rstudioapi", "stringi", "magick", "EnvisionRiskRaaS")
 sapply(pckg, usePackage)
 
 # EnvisionRiskRaaS

@@ -30,7 +30,7 @@ dashboard_backtest <- function(backtestdata, base_cur, signif_level, title = "Ba
   random_id <- IdGenerator(1)
   output_file_name <- paste0("Report_Backtest_id_", random_id)
   suppressWarnings(rmarkdown::render(input       = paste0(getwd(), "/Dashboards/Backtest/Dependencies/dashboard_backtest.Rmd"),
-                                     output_file = paste0(getwd(), "/Dashboards/Backtest/Output/", output_file_name, ".html"), 
+                                     output_file = paste0("C:/Users/jonas/Dropbox/Projects/templates/r-templates/Dashboards/Backtest/", output_file_name, ".html"), #paste0(getwd(), "/Output/", output_file_name, ".html"), 
                                      params      = list(calc_backtest  = out_workflow_backtest,
                                                         set_title      = title),
                                      quiet       = TRUE))

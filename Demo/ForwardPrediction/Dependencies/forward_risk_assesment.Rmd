@@ -1,0 +1,123 @@
+---
+title: "Tactical Asset Allocation"
+author: Jonas Hal
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: officedown::rdocx_document
+params:
+  base_cur: "DKK"
+  confidence_level: 0.975
+  prediction_date: !r as.Date("2023-05-05")
+  tickers: !r c("EEM.US", "VNQ.US", "MDY.US", "SLY.US", "SPY.US", "EFA.US", "TIP.US", "AGG.US", "DJP.US", "SHV.US", "USDDKK")
+  tickers_labels: !r c("Emerging Market", "REITs", "Mid Cap", "Small Cap", "Large Cap", "Int'l Stocks", "TIPS", "Bonds", "Comdty", "Short Deposits", "FX_USD")
+  logo: !r magick::image_read("C:/Users/jonas/Dropbox/Envisionrisk/logoicon.png")
+---
+
+```{r setup, include=FALSE}
+#devtools::install_github("davidgohel/officedown")
+knitr::opts_chunk$set(echo = TRUE)
+source("C:/Users/jonas/Dropbox/Kunder/Udvikling/forward_risk_assesment_dependencies.R")
+
+#### AUTHENTICATE With EnvisionRisk Server ####
+envrsk_auth_renew_access_token()
+access_token <- my_access_token[["access-token"]]
+
+
+```
+
+## Forward Looking Risk Prediction
+
+Forward-looking risk prediction is an essential part of market risk management. In simple terms, it's like having a crystal ball that can help you anticipate potential risks in the market and make better financial decisions. Here are some benefits of using forward-looking risk prediction in a way that's easy to understand for non-professionals:
+
+* Plan for the future: Knowing what might happen in the market helps you prepare for any potential ups and downs. With forward-looking risk prediction, you can develop a strategy to protect your investments and ensure they remain stable even during turbulent times.
+
+* Make smarter decisions: When you can predict the risks involved in different investments, you're able to make more informed decisions about where to put your money. This means you can invest in opportunities that have lower risks or a better chance of success, which ultimately leads to higher returns.
+
+* Diversify your portfolio: A diversified portfolio is like having many eggs in different baskets. It helps to spread your investments across various assets or sectors, reducing the risk of losing money if one investment performs poorly. Forward-looking risk prediction can help you identify areas where you might be overexposed and suggest ways to balance your portfolio for long-term stability.
+
+* Stay ahead of the game: By anticipating market changes, you can react more quickly and proactively to shifts in the financial landscape. This means you can take advantage of new opportunities or minimize potential losses before others do, giving you a competitive edge.
+
+* Reduce stress and uncertainty: Investing can be stressful, especially when the market is unpredictable. Forward-looking risk prediction helps to reduce uncertainty by providing you with insights into the future of the market. This can help you feel more confident and secure in your investment decisions.
+
+In summary, forward-looking risk prediction is a valuable tool for managing market risk. It helps you plan for the future, make smarter decisions, diversify your portfolio, stay ahead of the game, and reduce stress and uncertainty in your investment journey. By utilizing this approach, even non-professionals can better safeguard their investments and improve their financial outcomes.
+
+```{r call_risk_server, include=FALSE}
+
+dt_out <- get_risk_assesment(params$prediction_date, params$tickers, params$base_cur, params$confidence_level)
+dt_out$symbol <- factor(
+  dt_out$symbol,
+  levels = params$tickers,
+  labels = params$tickers_labels)
+
+```
+
+<!---BLOCK_LANDSCAPE_START--->
+```{r make_plot, echo=FALSE, fig.height=7, fig.width=10, warning=FALSE, message=FALSE}
+market_cockpit <- create_market_cockpit(dt_out, params$base_cur, prediction_date = params$prediction_date)
+market_cockpit
+grid::grid.raster(params$logo, x = 0.97, y = 0.03, just = c('right', 'bottom'), width = unit(1, 'inch'))
+```
+
+<!---BLOCK_LANDSCAPE_STOP--->
+## Market Cockpit
+
+A risk monitor with price evolution, risk, and stress estimates is a financial tool designed to help investors, traders, and financial institutions track and analyze the performance of their investments. In simpler terms, it's like a personal assistant that constantly watches over your investments and provides you valuable information to make better decisions. Let's break down the three key features of this risk monitor:
+
+* Price Evolution: This feature tracks the changes in the value of your investments over time. It helps you understand how your investments have performed in the past and their current market value. By observing the price evolution, you can make better decisions about whether to buy, sell or hold onto your investments.
+
+* Risk Estimates: Risk is an inherent part of investing, and it refers to the possibility of your investments losing value. The risk monitor calculates the potential risks associated with your investments, considering factors like market volatility, economic conditions, and the financial health of the companies you have invested in. This helps you understand the overall safety of your investments and allows you to manage your risk exposure more effectively.
+
+* Stress Estimates: Stress testing is a way to evaluate how your investments would perform under extreme market conditions or scenarios, such as a financial crisis or economic downturn. The stress estimates feature provides you with an idea of how resilient your investments are in the face of adverse events. This helps you determine if your investments are well-diversified and capable of weathering tough times.
+
+In summary, a risk monitor with price evolution, risk, and stress estimates is a valuable tool that helps investors make informed decisions by providing insights into the performance, safety, and resilience of their investments. It acts as a personal financial guide, assisting you in managing your investments more effectively and reducing the chances of financial loss.
+
+## Tactical Asset Allocation (TAC)
+Tactical asset allocation is a flexible investment strategy that allows you to make short-term adjustments to your portfolio based on current market conditions. Think of it like a skilled soccer coach who adjusts their team's formation and tactics during a game to take advantage of opportunities or counter the opposing team's strategy.
+
+In the world of investing, your portfolio is like your team, and the assets you invest in, such as stocks, bonds, and cash, are your players. The goal of tactical asset allocation is to temporarily change the mix of assets in your portfolio to benefit from market trends or to protect your investments from potential risks.
+
+For example, if the stock market is expected to perform well, you might increase the percentage of stocks in your portfolio for a short period to take advantage of the potential gains. Once the market conditions change or the opportunity passes, you would then return to your original long-term investment strategy.
+
+In summary, tactical asset allocation is like a smart, adaptable approach to investing that helps you make short-term adjustments to your portfolio based on changing market conditions, allowing you to capitalize on opportunities or minimize risks as they arise.
+
+### Performance & Risk (TAC) - January 2018 - April 2023
+
+## Tactical Asset Allocation (TAC) - May 2023
+
+### Performance Expectations
+
+### Risk Considarations
+
+### Portfolio Limitations & Conditions
+Portfolio limitations in tactical asset allocation are like the rules or boundaries that you need to follow when making adjustments to your investment portfolio. Imagine you're playing a board game, and there are specific guidelines on how you can move your pieces or make changes to the game. Similarly, portfolio limitations are the constraints you must consider when adapting your investment strategy.
+
+These limitations can include:
+
+* Minimum or maximum investment amounts: Just like a game that requires a certain number of tokens to play, you might have restrictions on how much you can invest in certain assets or categories.
+
+* Diversification requirements: Diversifying your investments is like having multiple types of game pieces to increase your chances of winning. Some portfolio limitations may require you to maintain a certain level of diversification to reduce risk.
+
+* Regulatory constraints: Just as a board game has rules that all players must follow, there may be legal or regulatory guidelines you need to adhere to when adjusting your portfolio.
+
+* Liquidity constraints: Liquidity is like how easily you can trade or convert your game pieces. Some assets might be more difficult to buy or sell, which can impact your ability to make tactical adjustments.
+
+In short, portfolio limitations in tactical asset allocation are the rules and boundaries that guide your investment decisions. They can influence how flexible and adaptable you can be when making short-term adjustments to your portfolio based on market conditions.
+
+#### Cardinality
+Cardinality in tactical asset allocation refers to the number of different assets or investment categories you include in your portfolio. Think of it like a chef who is preparing a meal and needs to decide how many ingredients to use in the recipe.
+
+In the context of tactical asset allocation, a higher cardinality means that you have more assets or investment categories in your portfolio. This allows for more flexibility and adaptability when making short-term adjustments based on market conditions.
+
+For example, if you have a higher cardinality, you might be able to shift funds between various stocks, bonds, or cash more easily, allowing you to take advantage of opportunities or reduce risks as they arise. On the other hand, a lower cardinality means your portfolio has fewer investment options, which can limit your ability to make tactical adjustments.
+
+In summary, cardinality in tactical asset allocation is like the number of ingredients in a chef's recipe. It represents the variety of assets or investment categories in your portfolio, which can influence your flexibility and adaptability when making short-term adjustments based on market conditions.
+
+#### Weights
+
+## Model Monitoring / Backtest - January 2018 - May 2023
+A backtest of a market risk model is like a practice run or rehearsal for a play. It's a way to test how well a particular investment strategy would have performed in the past, using historical market data. By doing this, you can get an idea of how effective the strategy might be in the future.
+
+Imagine you have a time machine and can go back in time with your investment strategy. You apply the strategy to historical market conditions and observe how it performs. The results of this exercise, or the backtest, will help you understand the strengths and weaknesses of your strategy.
+
+In short, backtesting a market risk model is like putting your investment strategy through a trial run using past market data. It helps you evaluate the strategy's effectiveness and make improvements before using it in real-life investing situations.
+
+

@@ -1,4 +1,8 @@
 #### DEPENDENCIES ####
+# *** Common dependencies ***
+source("init_r_templates.R")
+
+# *** Specific dependencies ***
 source("Demo/GenerateBacktestDataset/Dependencies/generate_backtest_dataset_dependencies.R")
 
 #******************************************************************************
@@ -13,11 +17,10 @@ my_signif_level <- 0.975
 # Import the daily portfolio positions 'temporal_positions.rds'. The 
 # 'temporal_positions.rds' is generated in the demo 
 # '/Demo/PortfolioWeights2Quantities'.
-dt_port_quantities           <- readRDS(paste0(getwd(), "/Data/temporal_positions.rds"))
+dt_port_quantities           <- readRDS(paste0(getwd(), "/Data/pension_port_temporal_positions.rds"))
 dt_port_quantities           <- dt_port_quantities[date < Sys.Date()]
 colnames(dt_port_quantities) <- toupper(colnames(dt_port_quantities))
 dt_port_quantities_splt      <- base::split(dt_port_quantities, dt_port_quantities$DATE)
-
 
 #### GO PARALLEL for all dates ####
 # The number of cores should be lower than the number
@@ -34,25 +37,19 @@ dt_port_quantities_splt      <- base::split(dt_port_quantities, dt_port_quantiti
 # result is some unexpected behavior.
 
 
-n.cores <- 1 #envrsk_get_max_threads(access_token = access_token)
+n.cores <- 5 #envrsk_get_max_threads(access_token = access_token)
 cl      <- parallel::makeCluster(n.cores)
 
 invisible(parallel::clusterEvalQ(cl, library("data.table")))
 
 # Export needed functions and datasets to the parallel-cluster
+invisible(parallel::clusterEvalQ(cl, library(EnvisionRiskRaaS)))
 parallel::clusterExport(cl, c(
-  "access_token",
   "my_base_cur",
   "my_volatility",
   "my_signif_level",
   "dt_port_quantities_splt",
-  "envrsk_portfolio_risk_regular",
-  "envrsk_portfolio_hypothetical_performance",
-  "portfolio_temporal_output",
-  "base_url",
-  "base_path",
-  "envrsk_post",
-  "process_portfolio_return_values"))
+  "portfolio_temporal_output"))
 
 # The dates to iterate over
 iter_dates   <- names(dt_port_quantities_splt)
@@ -75,7 +72,6 @@ backtest_out <- parLapply(cl, iter_dates, function(x){
   my_positions    <- dt_port_quantities_splt[[x]][,.(POSITION_ID, POSITION_TYPE, SYMBOL, QUANTITY)]
 
   out <- portfolio_temporal_output(
-    access_token  = access_token,
     date          = x,
     positions     = my_positions,
     base_cur      = my_base_cur,
@@ -100,5 +96,4 @@ backtestdata_melt <- melt.data.table(backtestdata, id.vars = "Date")
 backtestdata_melt[, Date := as.Date(Date)]
 ggplot(backtestdata_melt, aes(x = Date, y = value, colour = variable))+
     geom_line()
-
 

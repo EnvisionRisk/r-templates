@@ -9,15 +9,13 @@ library(parallel)
 #******************************************************************************
 #* Wrapping relevant EnvisionRisk Market Risk-as-a-Service API calls into R-functions
 #******************************************************************************
-portfolio_temporal_output <- function(access_token,
-                                      date,
+portfolio_temporal_output <- function(date,
                                       positions,
                                       base_cur      = NULL,
                                       signif_level  = NULL,
                                       volatility_id = NULL){
 
-  envrsk_obj_risk_regular <- envrsk_portfolio_risk_regular(
-    access_token  = access_token,
+  envrsk_obj_risk_regular <- EnvisionRiskRaaS::envrsk_portfolio_risk_regular(
     date          = date,
     positions     = positions,
     base_cur      = base_cur,
@@ -28,8 +26,7 @@ portfolio_temporal_output <- function(access_token,
   dt_rsk_out <- envrsk_obj_risk_regular[["Output"]]
   dt_rsk_out[, date := date]
 
-  envrsk_obj_hypothetical_perf <- envrsk_portfolio_hypothetical_performance(
-    access_token  = access_token,
+  envrsk_obj_hypothetical_perf <- EnvisionRiskRaaS::envrsk_portfolio_hypothetical_performance(
     date          = date,
     positions     = positions,
     base_cur      = base_cur,

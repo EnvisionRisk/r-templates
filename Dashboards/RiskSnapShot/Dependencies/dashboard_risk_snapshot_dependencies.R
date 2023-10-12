@@ -14,7 +14,7 @@ library(ggplot2)
 library(knitr)
 library(kableExtra)
 
-source("Dashboards/RsikSnapShot/Dependencies/dashboard_risk_snapshot_plot.R")
+source("Dashboards/RiskSnapShot/Dependencies/dashboard_risk_snapshot_plot.R")
 
 # Create the risk dashboard with knitr
 dashboard_risk_snapshot <- function(date, positions, risk_measure,
@@ -46,7 +46,7 @@ dashboard_risk_snapshot <- function(date, positions, risk_measure,
   output_file_name <- paste0("Report_Risk_Snapshot_", out_workflow_risk_snapshot$Input$date, "_id_", random_id)
   suppressWarnings(rmarkdown::render(input       = paste0(getwd(), "/Dashboards/RiskSnapShot/Dependencies/dashboard_risk_snapshot.Rmd"),
                                      #output_file = paste0("/home/rstudio/r-templates-main/Dashboards/RiskSnapShot/Output/", output_file_name, ".html"),
-                                     output_file = paste0(getwd(), "/Dashboards/RiskSnapShot/Output/", output_file_name, ".html"),
+                                     output_file = paste0("C:/Users/jonas/Dropbox/Projects/templates/r-templates/Dashboards/RiskSnapShot/Output/", output_file_name, ".html"),
                                      params      = list(workflow_object = out_workflow_risk_snapshot),
                                      quiet       = TRUE))
 

@@ -1,4 +1,8 @@
 #### DEPENDENCIES ####
+# *** Common dependencies ***
+source("init_r_templates.R")
+
+# *** Specific dependencies ***
 source("Dashboards/Backtest/Dependencies/dashboard_backtest_dependencies.R")
 
 #******************************************************************************
@@ -11,4 +15,4 @@ dashboard_backtest(
     backtestdata = demo_backtestdata,
     base_cur     = "DKK",
     signif_level = 0.975,
-    title        = "60/40 ETF")
+    title        = "Pension Example")
