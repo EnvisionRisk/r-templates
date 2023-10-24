@@ -5,7 +5,6 @@ source("init_r_templates.R")
 # *** Specific dependencies ***
 source("Demo/ForwardPrediction/Dependencies/forward_risk_assesment_dependencies.R")
 
-
 #### SETTINGS ####
 base_cur             <- "DKK"
 confidence_level_pit <- 0.975
@@ -18,7 +17,7 @@ horizon_dt           <- 10
 # use_symbs_labels <- c("Emerging Markets", "REITs", "Mid Cap", "Consumer Staples", "Large Cap", "Int'l Stocks", "TIPS", "Bonds", "Comdty", "Cash", "FX_USD")
 use_symbs        <- c("SPY.US")
 use_symbs_labels <- c("Large Cap")
-use_date         <- Sys.Date()-1
+use_date         <- Sys.Date()-2
 
 #### Risk Overview table ####
 dt_out_risk_table <- fkt_process(
