@@ -1,0 +1,794 @@
+[
+  {
+    "symbol": "AAPL.US",
+    "position_id": "3e58350f09a1e5bda511b19cfa7b75bd",
+    "date": "2023-10-02",
+    "position_type": "single_stock",
+    "quantity": 3007052.6808,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "AAPL.US",
+    "position_id": "0acb3224b42066e7191bf53d8b3d4f4f",
+    "date": "2023-10-03",
+    "position_type": "single_stock",
+    "quantity": 3007052.6808,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "AAPL.US",
+    "position_id": "f4c5852cd0ca6b740ad967934b2f61d3",
+    "date": "2023-10-04",
+    "position_type": "single_stock",
+    "quantity": 3007052.6808,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "ABI.BR",
+    "position_id": "f4e7d28e49b552f4407b649acc5fb466",
+    "date": "2023-10-02",
+    "position_type": "single_stock",
+    "quantity": 5560242.4399,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "ABI.BR",
+    "position_id": "00f4a220457fb92171bcfcffd1c2f282",
+    "date": "2023-10-03",
+    "position_type": "single_stock",
+    "quantity": 5560242.4399,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "ABI.BR",
+    "position_id": "97cf4a229a7186be5bb80368e751a4a7",
+    "date": "2023-10-04",
+    "position_type": "single_stock",
+    "quantity": 5560242.4399,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "ALV.XETRA",
+    "position_id": "5abaaa1d4c54f858434eed47ea0deaa2",
+    "date": "2023-10-02",
+    "position_type": "single_stock",
+    "quantity": 934275.6601,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "ALV.XETRA",
+    "position_id": "c903612fcb578f3d03ea64f8a507e2df",
+    "date": "2023-10-03",
+    "position_type": "single_stock",
+    "quantity": 934275.6601,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "ALV.XETRA",
+    "position_id": "cb632eb9ea087297ac89711346567947",
+    "date": "2023-10-04",
+    "position_type": "single_stock",
+    "quantity": 934275.6601,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "CRB.PA",
+    "position_id": "d902ff867f83c644947fb11098bfcdfc",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 27890577.8388,
+    "location": "Alternatives//Commodities"
+  },
+  {
+    "symbol": "CRB.PA",
+    "position_id": "c3a0f8aacd37b2774f92603892f2dc99",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 27890577.8388,
+    "location": "Alternatives//Commodities"
+  },
+  {
+    "symbol": "CRB.PA",
+    "position_id": "3c1708295f32d03b3a55db4439d1cfd2",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 27890577.8388,
+    "location": "Alternatives//Commodities"
+  },
+  {
+    "symbol": "CRP.PA",
+    "position_id": "c2e39c59a196dc5ee171a39531ee3b3b",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 10660758.6945,
+    "location": "FixedIncome//CorporateBond"
+  },
+  {
+    "symbol": "CRP.PA",
+    "position_id": "2a167d91c5b22df1bc1752c93938276e",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 10660758.6945,
+    "location": "FixedIncome//CorporateBond"
+  },
+  {
+    "symbol": "CRP.PA",
+    "position_id": "0f51199ed414bd19fdc80c99f94679eb",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 10660758.6945,
+    "location": "FixedIncome//CorporateBond"
+  },
+  {
+    "symbol": "CSH.PA",
+    "position_id": "a218c19cd080852e1a2fcf47302d7a0c",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 6153963.3719,
+    "location": "Cash//EUR"
+  },
+  {
+    "symbol": "CSH.PA",
+    "position_id": "ac31d0650f9747b4a722267cebcbc6b4",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 6153963.3719,
+    "location": "Cash//EUR"
+  },
+  {
+    "symbol": "CSH.PA",
+    "position_id": "8abbfa71b1f87736a835fd0ecacfc899",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 6153963.3719,
+    "location": "Cash//EUR"
+  },
+  {
+    "symbol": "D5BK.XETRA",
+    "position_id": "0a86c3a5560bc9fe81eeb831a8affc95",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 29191495.1784,
+    "location": "Alternatives//RealEstate//Euroland"
+  },
+  {
+    "symbol": "D5BK.XETRA",
+    "position_id": "6c11d1ea79c6958a7d1894616f1f7ae0",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 29191495.1784,
+    "location": "Alternatives//RealEstate//Euroland"
+  },
+  {
+    "symbol": "D5BK.XETRA",
+    "position_id": "dcb00fa71395c4bc2e0cf2c84b3ded98",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 29191495.1784,
+    "location": "Alternatives//RealEstate//Euroland"
+  },
+  {
+    "symbol": "DXSU.XETRA",
+    "position_id": "1e21723b9dbfdc556e85083f6f1fbc04",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 1907466.9131,
+    "location": "FixedIncome//EmergingMarket"
+  },
+  {
+    "symbol": "DXSU.XETRA",
+    "position_id": "ab48fdce907fcbee7e2fea6ecd86db76",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 1907466.9131,
+    "location": "FixedIncome//EmergingMarket"
+  },
+  {
+    "symbol": "DXSU.XETRA",
+    "position_id": "b55b05110466911251647ef4abe4c804",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 1907466.9131,
+    "location": "FixedIncome//EmergingMarket"
+  },
+  {
+    "symbol": "EEM.US",
+    "position_id": "4a6cf40b06e5e7e7857cca929f1d8ee0",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 24871376.3034,
+    "location": "Equities//Emerging Markets"
+  },
+  {
+    "symbol": "EEM.US",
+    "position_id": "e22756c193c7e8b6a6d1b12ee99b3a3f",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 24871376.3034,
+    "location": "Equities//Emerging Markets"
+  },
+  {
+    "symbol": "EEM.US",
+    "position_id": "003670d88c2161061c848e6bf95aeb2b",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 24871376.3034,
+    "location": "Equities//Emerging Markets"
+  },
+  {
+    "symbol": "EUEA.AS",
+    "position_id": "4c9d9b9af18901771b96e2987850b007",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 19136931.1073,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "EUEA.AS",
+    "position_id": "e7585d5050706ad1c0fe6ab5c002a73b",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 19136931.1073,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "EUEA.AS",
+    "position_id": "f819d9a01d2d132eddbbc396e095f565",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 19136931.1073,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "EWA.US",
+    "position_id": "e724c7f45c1131ae1913babb4335b698",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 15956531.5196,
+    "location": "Equities//Australia"
+  },
+  {
+    "symbol": "EWA.US",
+    "position_id": "b8e7764ddfc37ab72e12da007f7419b1",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 15956531.5196,
+    "location": "Equities//Australia"
+  },
+  {
+    "symbol": "EWA.US",
+    "position_id": "4a00d3a656371f7ba9447344f1ba704b",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 15956531.5196,
+    "location": "Equities//Australia"
+  },
+  {
+    "symbol": "EWJ.US",
+    "position_id": "eff513cb63f747a9747457ecc2584e06",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 8539351.2934,
+    "location": "Equities//Japan"
+  },
+  {
+    "symbol": "EWJ.US",
+    "position_id": "77878d01ee8e039c5b8de64e46f66289",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 8539351.2934,
+    "location": "Equities//Japan"
+  },
+  {
+    "symbol": "EWJ.US",
+    "position_id": "aecbd4b99658f219804e25f89e847e4e",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 8539351.2934,
+    "location": "Equities//Japan"
+  },
+  {
+    "symbol": "FXB.US",
+    "position_id": "5e0cc8b10de9097a7a2e80e53fd9c840",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 2196147.5891,
+    "location": "Cash//GBP"
+  },
+  {
+    "symbol": "FXB.US",
+    "position_id": "7c5d538153ccc9da1be8f0d21d61b0e3",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 2196147.5891,
+    "location": "Cash//GBP"
+  },
+  {
+    "symbol": "FXB.US",
+    "position_id": "64acaa4deb07154c5357fda952dea6ae",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 2196147.5891,
+    "location": "Cash//GBP"
+  },
+  {
+    "symbol": "FXF.US",
+    "position_id": "722d8097aa01080242597ef1dbe2f075",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 3531186.8597,
+    "location": "Cash//CHF"
+  },
+  {
+    "symbol": "FXF.US",
+    "position_id": "3302b9ffe7e3a9fbf0302669670725c1",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 3531186.8597,
+    "location": "Cash//CHF"
+  },
+  {
+    "symbol": "FXF.US",
+    "position_id": "9e4ed96ce09d26340735a94c08de9380",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 3531186.8597,
+    "location": "Cash//CHF"
+  },
+  {
+    "symbol": "GSK.LSE",
+    "position_id": "30c8ff4e4e0ae1d1e0b5d74861283327",
+    "date": "2023-10-02",
+    "position_type": "single_stock",
+    "quantity": 8483822.5244,
+    "location": "Equities//UK"
+  },
+  {
+    "symbol": "GSK.LSE",
+    "position_id": "2a8b57b5aa7bab10cb9f864a8e62ba7c",
+    "date": "2023-10-03",
+    "position_type": "single_stock",
+    "quantity": 8483822.5244,
+    "location": "Equities//UK"
+  },
+  {
+    "symbol": "GSK.LSE",
+    "position_id": "ce89d828254eaa450bb8ac9ea792f514",
+    "date": "2023-10-04",
+    "position_type": "single_stock",
+    "quantity": 8483822.5244,
+    "location": "Equities//UK"
+  },
+  {
+    "symbol": "HD.US",
+    "position_id": "611ee7e2e6eadff837fca3a5e0b24302",
+    "date": "2023-10-02",
+    "position_type": "single_stock",
+    "quantity": 851928.5966,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "HD.US",
+    "position_id": "20724f30ccd81e5c6dcdd70f5e29e283",
+    "date": "2023-10-03",
+    "position_type": "single_stock",
+    "quantity": 851928.5966,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "HD.US",
+    "position_id": "c8678b71523d6ce05043907a4abfdc3c",
+    "date": "2023-10-04",
+    "position_type": "single_stock",
+    "quantity": 851928.5966,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "INGA.AS",
+    "position_id": "979119dcd385f5e5916e1a240aa46414",
+    "date": "2023-10-02",
+    "position_type": "single_stock",
+    "quantity": 12924671.559,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "INGA.AS",
+    "position_id": "33fe15361dbfb688fa5ccd6fcd7a5618",
+    "date": "2023-10-03",
+    "position_type": "single_stock",
+    "quantity": 12924671.559,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "INGA.AS",
+    "position_id": "73748ac9f62d9d4ace5372f77a40acab",
+    "date": "2023-10-04",
+    "position_type": "single_stock",
+    "quantity": 12924671.559,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "INTC.US",
+    "position_id": "312c0d0b8a6fae4f558340398f336cd4",
+    "date": "2023-10-02",
+    "position_type": "single_stock",
+    "quantity": 4827355.7382,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "INTC.US",
+    "position_id": "0fb203654f58752b3d4ed7097c075b59",
+    "date": "2023-10-03",
+    "position_type": "single_stock",
+    "quantity": 4827355.7382,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "INTC.US",
+    "position_id": "1b7f6d4912e42d1f55f0454a95a063f2",
+    "date": "2023-10-04",
+    "position_type": "single_stock",
+    "quantity": 4827355.7382,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "ISP.MI",
+    "position_id": "fe1d9ff29fac54bff50bd300624eeb1e",
+    "date": "2023-10-02",
+    "position_type": "single_stock",
+    "quantity": 66477306.5844,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "ISP.MI",
+    "position_id": "e26277a329e76c06762874bc8558c44b",
+    "date": "2023-10-03",
+    "position_type": "single_stock",
+    "quantity": 66477306.5844,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "ISP.MI",
+    "position_id": "6ba5f5e9040ce17d89d71b90baa7f4ab",
+    "date": "2023-10-04",
+    "position_type": "single_stock",
+    "quantity": 66477306.5844,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "JNK.US",
+    "position_id": "b497d5151b06c29c5e1de9cd87bcc447",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 8591501.876,
+    "location": "FixedIncome//HighYield"
+  },
+  {
+    "symbol": "JNK.US",
+    "position_id": "2bbe9a281e6ba3c321b9b89dfd0adda1",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 8591501.876,
+    "location": "FixedIncome//HighYield"
+  },
+  {
+    "symbol": "JNK.US",
+    "position_id": "4adbba6fde3ba70f556bc89e85e3f397",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 8591501.876,
+    "location": "FixedIncome//HighYield"
+  },
+  {
+    "symbol": "LQD.US",
+    "position_id": "373a9addcd6089e61ddb99af4dd5d9ac",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 5066433.6706,
+    "location": "FixedIncome//CorporateBond"
+  },
+  {
+    "symbol": "LQD.US",
+    "position_id": "d13e920b2595ce486d71e8fbd8c4a3be",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 5066433.6706,
+    "location": "FixedIncome//CorporateBond"
+  },
+  {
+    "symbol": "LQD.US",
+    "position_id": "cb615d69ee6f6969caa3c318e8b31e3f",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 5066433.6706,
+    "location": "FixedIncome//CorporateBond"
+  },
+  {
+    "symbol": "MSFT.US",
+    "position_id": "7f89597602bd6d0969817a7222daf62b",
+    "date": "2023-10-02",
+    "position_type": "single_stock",
+    "quantity": 760910.5149,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "MSFT.US",
+    "position_id": "b4fb11bd0715fc8807281d5dfb954997",
+    "date": "2023-10-03",
+    "position_type": "single_stock",
+    "quantity": 760910.5149,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "MSFT.US",
+    "position_id": "3c6acd733c6801ff3cfccbe7ead8ee22",
+    "date": "2023-10-04",
+    "position_type": "single_stock",
+    "quantity": 760910.5149,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "PG.US",
+    "position_id": "918587859da8f92b900cd6a26312dd61",
+    "date": "2023-10-02",
+    "position_type": "single_stock",
+    "quantity": 1411867.5154,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "PG.US",
+    "position_id": "537b895f88e41476d6e350d1f8aba056",
+    "date": "2023-10-03",
+    "position_type": "single_stock",
+    "quantity": 1411867.5154,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "PG.US",
+    "position_id": "5d96e240ff23bb06bae146c39689eb19",
+    "date": "2023-10-04",
+    "position_type": "single_stock",
+    "quantity": 1411867.5154,
+    "location": "Equities//US"
+  },
+  {
+    "symbol": "RLY.US",
+    "position_id": "bc3b6c5e4038f6be995466dcfca84145",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 66837211.1715,
+    "location": "Alternatives//HedgeFunds"
+  },
+  {
+    "symbol": "RLY.US",
+    "position_id": "0fac0eab3131e7ec7ab0627947ba6cee",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 66837211.1715,
+    "location": "Alternatives//HedgeFunds"
+  },
+  {
+    "symbol": "RLY.US",
+    "position_id": "5022426d924fdc04192a20b3e434bc06",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 66837211.1715,
+    "location": "Alternatives//HedgeFunds"
+  },
+  {
+    "symbol": "SHY.US",
+    "position_id": "a1e0f485a608960835a6b7cf3d9313dc",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 4249899.5434,
+    "location": "FixedIncome//GovernmentBond"
+  },
+  {
+    "symbol": "SHY.US",
+    "position_id": "a9192814623b0d07f40dfffb87e41340",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 4249899.5434,
+    "location": "FixedIncome//GovernmentBond"
+  },
+  {
+    "symbol": "SHY.US",
+    "position_id": "c557102e0633cb8bd7424c3e4d653fda",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 4249899.5434,
+    "location": "FixedIncome//GovernmentBond"
+  },
+  {
+    "symbol": "SYB4.XETRA",
+    "position_id": "486aa6179364d60ae24bdda951e5aca6",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 37406162.0105,
+    "location": "FixedIncome//GovernmentBond"
+  },
+  {
+    "symbol": "SYB4.XETRA",
+    "position_id": "102628ec964a87ccd0d356dc1d9429be",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 37406162.0105,
+    "location": "FixedIncome//GovernmentBond"
+  },
+  {
+    "symbol": "SYB4.XETRA",
+    "position_id": "69d02cb4ffaec3799f47b0195d83c3e6",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 37406162.0105,
+    "location": "FixedIncome//GovernmentBond"
+  },
+  {
+    "symbol": "TIP.US",
+    "position_id": "496b4a294dcbaed8c1894eeab7e2599a",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 6629326.201,
+    "location": "Alternatives//Inflation-Protected"
+  },
+  {
+    "symbol": "TIP.US",
+    "position_id": "ef60c1d98db148e70753d68d416ff4e4",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 6629326.201,
+    "location": "Alternatives//Inflation-Protected"
+  },
+  {
+    "symbol": "TIP.US",
+    "position_id": "c713d21ab70a1007b54dd6c5248564bc",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 6629326.201,
+    "location": "Alternatives//Inflation-Protected"
+  },
+  {
+    "symbol": "TLT.US",
+    "position_id": "e4a3af93cb8047584894ff06e4299ec4",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 1941202.8083,
+    "location": "FixedIncome//GovernmentBond"
+  },
+  {
+    "symbol": "TLT.US",
+    "position_id": "a02c06ef3ed56d5eead37e4eccf2d32b",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 1941202.8083,
+    "location": "FixedIncome//GovernmentBond"
+  },
+  {
+    "symbol": "TLT.US",
+    "position_id": "51f924f49fa7348fa0b5dd2f0555f8ca",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 1941202.8083,
+    "location": "FixedIncome//GovernmentBond"
+  },
+  {
+    "symbol": "TTE.PA",
+    "position_id": "b52419894bf18f3c716f633ab8f758e3",
+    "date": "2023-10-02",
+    "position_type": "single_stock",
+    "quantity": 3644462.8357,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "TTE.PA",
+    "position_id": "26877daf5dc5973b710a2da7abf16d29",
+    "date": "2023-10-03",
+    "position_type": "single_stock",
+    "quantity": 3644462.8357,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "TTE.PA",
+    "position_id": "0717bec5e33917b2af18821704088a1c",
+    "date": "2023-10-04",
+    "position_type": "single_stock",
+    "quantity": 3644462.8357,
+    "location": "Equities//Euroland"
+  },
+  {
+    "symbol": "VNLA.US",
+    "position_id": "b528587b53e85eca382ae76c3aaeb578",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 8975780.52,
+    "location": "FixedIncome//CorporateBond"
+  },
+  {
+    "symbol": "VNLA.US",
+    "position_id": "01e771e559de3bd5c4d985ea8b259b9a",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 8975780.52,
+    "location": "FixedIncome//CorporateBond"
+  },
+  {
+    "symbol": "VNLA.US",
+    "position_id": "e70fb4e6def1d23ff19f78d47dc9b695",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 8975780.52,
+    "location": "FixedIncome//CorporateBond"
+  },
+  {
+    "symbol": "VNQ.US",
+    "position_id": "aacf1630cf007f9d3bfb1fd2628fa2ea",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 4536412.8071,
+    "location": "Alternatives//RealEstate//US"
+  },
+  {
+    "symbol": "VNQ.US",
+    "position_id": "13ab7ae00e78f7c26d33cbaf69c015c4",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 4536412.8071,
+    "location": "Alternatives//RealEstate//US"
+  },
+  {
+    "symbol": "VNQ.US",
+    "position_id": "42f3ce110e80830484e6d6d28e175162",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 4536412.8071,
+    "location": "Alternatives//RealEstate//US"
+  },
+  {
+    "symbol": "XSMI.SW",
+    "position_id": "b033b0469bd334e406ae044f81f3f9d2",
+    "date": "2023-10-02",
+    "position_type": "etf",
+    "quantity": 6892509.6214,
+    "location": "Equities//Switzerland"
+  },
+  {
+    "symbol": "XSMI.SW",
+    "position_id": "e9c897b600ba36e520e0a05c9efa64fe",
+    "date": "2023-10-03",
+    "position_type": "etf",
+    "quantity": 6892509.6214,
+    "location": "Equities//Switzerland"
+  },
+  {
+    "symbol": "XSMI.SW",
+    "position_id": "96a840e11c06c24c50f0c3de981476da",
+    "date": "2023-10-04",
+    "position_type": "etf",
+    "quantity": 6892509.6214,
+    "location": "Equities//Switzerland"
+  },
+  {
+    "symbol": "ZURN.SW",
+    "position_id": "f9d081a9beb78e06c7a143f25cd51ed8",
+    "date": "2023-10-02",
+    "position_type": "single_stock",
+    "quantity": 373944.4877,
+    "location": "Equities//Switzerland"
+  },
+  {
+    "symbol": "ZURN.SW",
+    "position_id": "b5168a2ef058a14ddb45be9812de2071",
+    "date": "2023-10-03",
+    "position_type": "single_stock",
+    "quantity": 373944.4877,
+    "location": "Equities//Switzerland"
+  },
+  {
+    "symbol": "ZURN.SW",
+    "position_id": "ae0aca57e88c3c96d9b0c0d31f01944a",
+    "date": "2023-10-04",
+    "position_type": "single_stock",
+    "quantity": 373944.4877,
+    "location": "Equities//Switzerland"
+  }
+]

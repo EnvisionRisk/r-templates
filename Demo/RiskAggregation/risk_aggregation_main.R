@@ -18,11 +18,10 @@ source("Demo/RiskAggregation/Dependencies/risk_aggregation_dependencies.R")
 
 #### SETTINGS ####
 demo_cur  <- "DKK"
-demo_date <- as.Date("2023-10-04")
+demo_date <- as.Date("2024-01-18")
 
 #### IMPORT PORTFOLIO ####
-demo_port_data_all_dates <- rbindlist(jsonlite::read_json("Data/pension_port_temporal_positions_short.json"))
-demo_port_data <- demo_port_data_all_dates[date == demo_date]
+demo_port_data <- readRDS("demo_port.rds")
 
 #### API REQUEST ####
 # Calculate Risk as point-in-time, 1-day 97.5% Expected-shortfall
@@ -57,3 +56,32 @@ do_print_tree <- function(){
 #### PRESENT THE RESULT ####
 do_print_tree()
 
+#### SIMULATE NEW PORTFOLIO ####
+new_row <- data.table(
+  "symbol"        = "DANSKE.CO",
+  "position_id"   = "1b7f6d4912e42d1f55f0454a95dserrg",
+  "position_type" = "single_stock",
+  "quantity"      = 1250000,
+  "location"      = "Additions")
+
+demo_port_data <- rbind(demo_port_data,
+                        new_row)
+
+
+#### Iterate Portfolio Calculation over Dates ####
+iter_dates <- c(as.Date("2023-11-13"), 
+                as.Date("2023-11-14"),
+                as.Date("2023-11-15"),
+                as.Date("2023-11-16"),
+                as.Date("2023-11-17"))
+
+lst_port_rsk <- lapply(iter_dates, function(x){
+  dt_demo_port_risk <- aggregate_and_combine_port_risk(
+    p_positions     = demo_port_data,
+    p_date          = x,
+    p_volatility_id = "point_in_time",
+    p_signif_level  = 0.975,
+    p_horizon       = 1,
+    p_base_cur      = demo_cur)
+  dt_demo_port_risk[, date := x]
+})

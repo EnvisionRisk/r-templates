@@ -171,7 +171,7 @@ get_risk_assesment_daily <- function(p_date, p_base_cur, p_symbs, p_symbs_labels
 
 create_market_cockpit <- function(dt_market_cockpit, base_cur, prediction_date = Sys.Date() - 1){
   use_year         <- lubridate::year(prediction_date) 
-  prices_from_date <- as.Date(paste0(use_year, "-01-01"))
+  prices_from_date <- as.Date(paste0(use_year-1, "-01-01"))
   prices_to_date   <- min(max(dt_market_cockpit$date), 
                           as.Date(paste0(use_year, "-12-31"))) 
   dt_out_plot <- copy(dt_market_cockpit[between(date, prices_from_date, prices_to_date)])
@@ -202,7 +202,7 @@ create_market_cockpit <- function(dt_market_cockpit, base_cur, prediction_date =
           plot.title = element_text(color = "#EC0108", face = 'bold'),
           plot.subtitle = element_text(color = "black"))+
     labs(title    = paste0("Market Cockpit (", use_year,")"),
-         subtitle = 'Price Evolution & Risk Monitoring (YTD +30 days)',
+         subtitle = 'Price Evolution & Risk Monitoring (forward 30 days)',
          y        = paste("Index (in ", base_cur, ")"),
          colour   = "") +
     coord_cartesian(clip = "off") +
