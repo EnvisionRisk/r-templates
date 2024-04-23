@@ -3,10 +3,6 @@
 # to find an approximate solution to optimisation problem, and therefore we 
 # only need to approximate the risk measure. 
 
-source("C:/Users/jonas/Dropbox/Projects/templates/r-templates/AssetAllocation/tmpl_strategic_asset_allocation_dependencies.R")
-source("C:/Users/jonas/Dropbox/Projects/templates/r-templates/AssetAllocation/tmpl_path_generator.R")
-source("C:/Users/jonas/Dropbox/Projects/templates/r-templates/AssetAllocation/tmpl_helpers.R")
-
 check_col_names <- function(tbl_to_be_checked, col_names){
   stopifnot(any(class(tbl_to_be_checked) %in% c("data.table", "data.frame", "matrix")))
   return(all(col_names %in% colnames(tbl_to_be_checked)))
@@ -42,6 +38,8 @@ MeanCVaR <- R6::R6Class(
     initialize = function(tbl_portfolio_positions) { # {position_id, current_weight}
       stopifnot(any(class(tbl_portfolio_positions) %in% c("data.table", "data.frame")))
       stopifnot(check_col_names(tbl_portfolio_positions, c("position_id", "current_weight")))
+      stopifnot(length(tbl_portfolio_positions[["position_id"]]) == length(unique(tbl_portfolio_positions[["position_id"]])))
+      stopifnot(nrow(tbl_portfolio_positions[is.na(current_weight), ]) == 0)
       dt_portfolio_positions_tmp   <- copy(tbl_portfolio_positions[,.(position_id, current_weight)])
       dt_portfolio_positions_check <- dt_portfolio_positions_tmp[,.("count" = length(current_weight)), by = position_id]
       
@@ -109,6 +107,7 @@ MeanCVaR <- R6::R6Class(
     },
     set_tbl_expected_mean_performance = function(tbl_expected_mean_performance){
       stopifnot(check_col_names(tbl_expected_mean_performance, c("position_id", "performance")))
+      stopifnot(nrow(tbl_expected_mean_performance[is.na(performance), ]) == 0)
       dt_expected_mean_performance_tmp   <- copy(tbl_expected_mean_performance[,.(position_id, performance)])
       dt_expected_mean_performance_check <- dt_expected_mean_performance_tmp[,.("count" = length(performance)), by = position_id]
       
@@ -316,6 +315,17 @@ MeanCVaR <- R6::R6Class(
       }
     },
     
+    get_pnl_is_log_transformed = function(){
+      return(private$pnl_is_log_transformed)
+    },
+    set_pnl_is_log_transformed = function(bool_pnl_is_log_transformed){
+      stopifnot(is.logical(bool_pnl_is_log_transformed))
+      if(bool_pnl_is_log_transformed != private$pnl_is_log_transformed){
+        invisible(private$in_validate())  
+      }
+      private$pnl_is_log_transformed <- bool_pnl_is_log_transformed
+    },
+    
     perform_asset_allocation_analysis = function(){
       private$in_validate()
       private$do_perform_asset_allocation_analysis()
@@ -392,6 +402,7 @@ MeanCVaR <- R6::R6Class(
     has_cardinality_constraint      = FALSE,
     has_risk_budget_constraint      = FALSE,
     has_asset_allocation_analysis   = FALSE,
+    pnl_is_log_transformed          = FALSE,
     max_use_cpu_cores               = FALSE,
     rsk_conf_level                  = 0.975,
     n_sim                           = 10000,
@@ -416,47 +427,34 @@ MeanCVaR <- R6::R6Class(
       private$do_simulate_portfolio_weights()
       
       message("------------------------------------------------------------------------------")
-      message("Portfolio Risk Caclulations.")
+      message("Portfolio Optimal Weights.")
       message("------------------------------------------------------------------------------")
-      es_tester <- risk_calc_parallization(
-        private$dt_simulate_portfolio_weights,
+      es_tester <- risk_profile_monte_carlo(
         private$dt_pnl_simulations[, colnames(private$dt_simulate_portfolio_weights), with = FALSE],
+        private$dt_simulate_portfolio_weights,
         private$rsk_conf_level,
         private$max_use_cpu_cores)
       
-      dt_rsk_perf <- merge(
+      object_efficient_frontier <- efficient_frontier(
         es_tester,
-        private$dt_expected_mean_performance[,.("ticker" = position_id, performance)],
-        by = "ticker",
-        all.x = TRUE)
-      dt_rsk <- dt_rsk_perf[, .(ES = sum(expected_shortfall), PERF = sum(performance * weight)), by = exec_id]
+        private$dt_expected_mean_performance[,.(position_id, performance)],
+        private$rsk_free_rate,
+        breaks = 25)
       
-      dt_efficient_frontier <- efficient_frontier(
-        dt_rsk, 
-        private$rsk_free_rate)
-      
-      dt_efficient_frontier <- cbind(
-        dt_efficient_frontier,
-        "exec_id" = dt_rsk[dt_efficient_frontier$max_perf_scenario, ][["exec_id"]])
-      
-      #### OPTIMAL PORTFOLIO ####
-      optimal_scenarie <- dt_efficient_frontier[which.max(tangent), max_perf_scenario]
-      optimal_exec_id  <- dt_rsk[optimal_scenarie, exec_id]
-      
-      optimal_weights_market_portfolio <- dt_rsk_perf[exec_id == optimal_exec_id, .("position_id"     = ticker, 
-                                                                                    "optimal_weights" = weight, 
-                                                                                    "performance"     = performance, 
-                                                                                    "risk"            = expected_shortfall, 
-                                                                                    "risk_weight"     = expected_shortfall_weight)]
-      optimal_weights_market_portfolio[, exec_id := optimal_exec_id]
-      
-      summary_market_portfolio                <- private$output_summary_market_portfolio(dt_efficient_frontier, optimal_exec_id)
       summary_market_portfolio_by_risk_budget <- "No risk-budget constraint has been selected."
       if(private$has_risk_budget_constraint){
-        summary_market_portfolio_by_risk_budget <- private$output_summary_market_portfolio_by_risk_budget(dt_rsk_perf, optimal_exec_id)  
-        summary_market_portfolio_by_risk_budget <- summary_market_portfolio_by_risk_budget[,.("group" = risk_budget_group, "weight" = optimal_weights, performance, risk, risk_weight, exec_id)]
+        optimal_exec_id <- object_efficient_frontier[["MarketPortfolio"]][["exec_id"]]
+        summary_market_portfolio_by_risk_budget <- private$output_summary_market_portfolio_by_risk_budget(
+          object_efficient_frontier[["TblRiskPerformance"]][exec_id == optimal_exec_id])
+        summary_market_portfolio_by_risk_budget[, exec_id := optimal_exec_id]
+        summary_market_portfolio_by_risk_budget <- summary_market_portfolio_by_risk_budget[,.("group" = risk_budget_group, 
+                                                                                              "weight" = optimal_weights, 
+                                                                                              performance, 
+                                                                                              performance_weight, 
+                                                                                              risk, 
+                                                                                              risk_weight)]
+        summary_market_portfolio_by_risk_budget[, type := "optimal_weights"]
       }
-      portfolio_tangent_line                  <- private$output_portfolio_tangent_line(dt_efficient_frontier)
       
       constraints <- list(
         "weight_constraints"      = private$has_position_weight_constraint,
@@ -464,19 +462,87 @@ MeanCVaR <- R6::R6Class(
         "risk_budget_constraints" = private$has_risk_budget_constraint)
       execution_time <- proc.time() - execution_time_start
       private$has_asset_allocation_analysis <- TRUE
-      setorder(dt_rsk_perf, exec_id)
+      #setorder(dt_rsk_perf, exec_id)
       
+      message("------------------------------------------------------------------------------")
+      message("Portfolio Risk Caclulations with Current Weights.")
+      message("------------------------------------------------------------------------------")
+      dt_current_weights <- copy(private$dt_portfolio_positions)
+      dt_current_weights <- dcast.data.table(dt_current_weights, . ~ position_id, value.var = "current_weight")[, -1]
+      dt_summary_current_weights <- risk_profile_monte_carlo(
+        private$dt_pnl_simulations[, colnames(dt_current_weights), with = FALSE],
+        dt_current_weights,
+        private$rsk_conf_level,
+        n_cores = 1)
+      dt_summary_current_weights[, ":=" (exec_id = NULL, slope = NULL)]
+      
+      dt_summary_current_weights <- merge(
+        dt_summary_current_weights,
+        private$dt_expected_mean_performance[,.(position_id, performance)],
+        by = "position_id",
+        all.x = TRUE)
+      dt_summary_current_weights[, performance := performance * weight]
+      dt_summary_current_weights[, perf_weight := performance / sum(performance)]
+      
+      dt_portfolio_current_weights      <- dt_summary_current_weights[, .(PERF = sum(performance), RISK = sum(expected_shortfall))]
+      dt_portfolio_current_weights[, slope := (PERF - private$rsk_free_rate) / RISK]
+      
+      summary_by_risk_budget_current_weights <- "No risk-budget constraint has been selected."
+      if(private$has_risk_budget_constraint){
+        summary_by_risk_budget_current_weights <- private$output_summary_market_portfolio_by_risk_budget(
+          dt_summary_current_weights)  
+        summary_by_risk_budget_current_weights <- summary_by_risk_budget_current_weights[,.("group" = risk_budget_group, 
+                                                                                            "weight" = optimal_weights, 
+                                                                                            performance, 
+                                                                                            performance_weight, 
+                                                                                            risk, 
+                                                                                            risk_weight)]
+        summary_by_risk_budget_current_weights[, type := "current_weights"]
+        summary_market_portfolio_by_risk_budget <- rbind(
+          summary_market_portfolio_by_risk_budget,
+          summary_by_risk_budget_current_weights)
+      } 
+      setnames(dt_summary_current_weights, "perf_weight", "performance_weight")
+      setnames(dt_summary_current_weights, "expected_shortfall", "risk")
+      
+      #### ####
+      dt_pnl_scenario_sim_current_weights <- data.table(as.matrix(private$dt_pnl_simulations[, colnames(dt_current_weights), with = FALSE]) %*% as.matrix(as.numeric(dt_current_weights)))
+      dt_pnl_scenario_sim_current_weights[, ":=" (scenario_id = 1:nrow(dt_pnl_scenario_sim_current_weights), type = "current_weights")]
+      setnames(dt_pnl_scenario_sim_current_weights, "V1", "pnl")
+      
+      dt_optimal_weights <- copy(object_efficient_frontier[["OptimalWeights"]])
+      dt_optimal_weights <- dcast.data.table(dt_optimal_weights, . ~ position_id, value.var = "weight")[, -1]
+      dt_pnl_scenario_sim_optimal_weights <- data.table(as.matrix(private$dt_pnl_simulations[, colnames(dt_optimal_weights), with = FALSE]) %*% as.matrix(as.numeric(dt_optimal_weights)))
+      dt_pnl_scenario_sim_optimal_weights[, ":=" (scenario_id = 1:nrow(dt_pnl_scenario_sim_optimal_weights), type = "optimal_weights")]
+      setnames(dt_pnl_scenario_sim_optimal_weights, "V1", "pnl")
+      
+      dt_pnl_scenario_sim <- rbind(
+        dt_pnl_scenario_sim_optimal_weights,
+        dt_pnl_scenario_sim_current_weights)                
+      
+      #### ####
       private$asset_allocation_analysis <- list(
-        "TMSTMP"                                  = Sys.time(),
-        "EXECUTION_TIME"                          = execution_time,
-        "CONSTRAINTS"                             = constraints,
-        "SIMULATED_RISK_PERF"                     = dt_rsk_perf[,.("position_id" = ticker, exec_id, weight, performance, "risk" = expected_shortfall, "risk_weight" = expected_shortfall_weight)],
-        "OPTIMAL_WEIGHTS_MARKET_PORTFOLIO"        = optimal_weights_market_portfolio,
-        "EFFICIENT_FRONTIER"                      = dt_efficient_frontier[,.("risk_range" = silo, "performance" = max_perf, "risk" = avg_es, exec_id, "slope" = tangent)],
-        "PORTFOLIO_TANGENT_LINE"                  = portfolio_tangent_line,
-        "SUMMARY_MARKET_PORTFOLIO"                = summary_market_portfolio,
-        "SUMMARY_MARKET_PORTFOLIO_BY_RISK_BUDGET" = summary_market_portfolio_by_risk_budget)
-    
+        "TMSTMP"                            = Sys.time(),
+        "EXECUTION_TIME"                         = execution_time,
+        "CONSTRAINTS"                            = constraints,
+        "SIMULATED_RISK_PERF"                    = object_efficient_frontier[["TblRiskPerformance"]][,.(position_id, 
+                                                                                                        exec_id, 
+                                                                                                        weight, 
+                                                                                                        performance, 
+                                                                                                       "performance_weight" = perf_weight,
+                                                                                                       "risk" = expected_shortfall, 
+                                                                                                       risk_weight)],
+        "SUMMARY_OPTIMAL_PORTFOLIO"              = object_efficient_frontier[["MarketPortfolio"]],
+        "SUMMARY_CURRENT_PORTFOLIO"              = dt_portfolio_current_weights,
+        "OPTIMAL_WEIGHTS_MARKET_PORTFOLIO"       = object_efficient_frontier[["OptimalWeights"]],
+        "EFFICIENT_FRONTIER"                     = object_efficient_frontier[["EfficientFrontier"]][,.(exec_id, "performance" = PERF, "risk" = RISK, slope)],
+        "SUMMARY_BY_RISK_BUDGET"                 = summary_market_portfolio_by_risk_budget,
+        "SUMMARY_CURRENT_WEIGHTS"                = dt_summary_current_weights,
+        "PNL_SIMULATION_PORTFOLIOS"              = dt_pnl_scenario_sim)
+      
+      message("------------------------------------------------------------------------------")
+      message("The analysis is complete. ")
+      message("------------------------------------------------------------------------------")
     },
     
     #-------------------------------------------------------------------------------
@@ -490,33 +556,25 @@ MeanCVaR <- R6::R6Class(
         "intercept" = private$rsk_free_rate,
         "slope"     = tangent)]
     },
-    output_summary_market_portfolio = function(in_efficient_frontier, in_optimal_exec_id){
-      in_efficient_frontier[tangent == max(tangent),.(
-        "exec_id"     = in_optimal_exec_id,
-        "weight"      = 1.0,
-        "performance" = max_perf,
-        "risk"        = avg_es,
-        "risk_weight" = 1.0)]
-    },
-    output_summary_market_portfolio_by_risk_budget = function(in_rsk_perf, in_optimal_exec_id){
-      dt_risk_per_inkl_risk_group <- copy(in_rsk_perf[exec_id == in_optimal_exec_id])
+    output_summary_market_portfolio_by_risk_budget = function(in_rsk_perf){
+      dt_risk_per_inkl_risk_group <- copy(in_rsk_perf)
       dt_risk_per_inkl_risk_group <- merge(
         dt_risk_per_inkl_risk_group,
-        private$dt_portfolio_location[, .("ticker" = position_id, location)],
-        by = "ticker",
+        private$dt_portfolio_location[, .(position_id, location)],
+        by = "position_id",
         all.x = TRUE)
       
       lst_risk_budget_group_summary <- lapply(private$dt_risk_budget_constraints[["group"]], function(x){
         dt_tmp <- dt_risk_per_inkl_risk_group[
-          grepl(x, location), .("optimal_weights" = sum(weight), 
-                                "performance"     = sum(weight * performance), 
-                                "risk"            = sum(expected_shortfall),
-                                "risk_weight"     = sum(expected_shortfall_weight))]
+          grepl(x, location), .("optimal_weights"    = sum(weight), 
+                                "performance"        = sum(performance), 
+                                "performance_weight" = sum(perf_weight),
+                                "risk"               = sum(expected_shortfall),
+                                "risk_weight"        = sum(risk_weight))]
         dt_tmp[, risk_budget_group := x]
         dt_tmp
       })
       dt_risk_budget_group_summary <- rbindlist(lst_risk_budget_group_summary)
-      dt_risk_budget_group_summary[, exec_id := in_optimal_exec_id]
       return(dt_risk_budget_group_summary)
     },
     
@@ -569,7 +627,15 @@ MeanCVaR <- R6::R6Class(
       
       dt_risk_budget_constraints <- data.table(copy(private$dt_risk_budget_constraints))
       if(private$has_risk_budget_constraint == FALSE){
-        dt_risk_budget_constraints[, constraint := 0.999]
+        risk_budget_groups    <- unique(as.character(
+          sapply(
+            unique(private$dt_portfolio_location[["location"]]), 
+            get_first_element, 
+            splitter = "//")))
+        
+        dt_risk_budget_constraints <- data.table("group"      = risk_budget_groups,
+                                                 "constraint" = 1.5)
+        private$dt_risk_budget_constraints <- dt_risk_budget_constraints
       } 
       dt_internal_suggested_weights <- private$suggested_weight_ranges_with_risk_budget(dt_internal_risk_profile, dt_risk_budget_constraints)
       dt_internal_sim_weights       <- private$optimal_weights_with_risk_budget(dt_internal_suggested_weights)
@@ -588,35 +654,35 @@ MeanCVaR <- R6::R6Class(
     #-------------------------------------------------------------------------------
     #-- RISK PROFILING OF THE PORTFOLIO                                           -- 
     #-------------------------------------------------------------------------------
-    risk_profiling_with_risk_budget = function(dt_weights, use_gaussian_approx = TRUE){
+    risk_profiling_with_risk_budget = function(dt_weights, use_gaussian_approx = FALSE){
       dt_risk_profile <- copy(private$dt_portfolio_positions)
       if(use_gaussian_approx == TRUE){
         #colnames(dt_weights) <- colnames(private$dt_pnl_simulations)
         dt_es <- risk_profile_gaussian(private$dt_pnl_simulations[, colnames(dt_weights), with = FALSE], 
                                        dt_weights, 
                                        private$rsk_conf_level)
-        dt_es_comp <- comb_risk_perf(dt_es[,.("ticker" = position_id, weight, "expected_shortfall_weight" = risk_weight, exec_id)], 
-                                     private$dt_expected_mean_performance[,.("ticker" = position_id, performance)])
+        dt_es_comp <- comb_risk_perf(dt_es[,.(position_id, weight, risk_weight, exec_id)], 
+                                     private$dt_expected_mean_performance[,.(position_id, performance)])
         
-        dt_slp <- slope_analysis(tickers = unique(private$vec_position_ids), 
+        dt_slp <- slope_analysis(unique(private$vec_position_ids), 
                                  dt_es_comp)
         
       } else {
-        dt_expected_shortfall <- risk_calc_parallization(
-          dt_weights[, private$vec_position_ids, with = FALSE],
+        dt_expected_shortfall <- risk_profile_monte_carlo(
           private$dt_pnl_simulations[, private$vec_position_ids, with = FALSE],
+          dt_weights[, private$vec_position_ids, with = FALSE],
           private$rsk_conf_level,
           private$max_use_cpu_cores)
         
         dt_es_comb <- comb_risk_perf(dt_expected_shortfall, 
-                                     private$dt_expected_mean_performance[,.("ticker" = position_id, performance)])
-        dt_slp     <- slope_analysis(tickers = unique(private$vec_position_ids), 
+                                     private$dt_expected_mean_performance[,.(position_id, performance)])
+        dt_slp     <- slope_analysis(unique(private$vec_position_ids), 
                                      dt_es_comb)
       }
       
       dt_risk_profile <- merge(
         dt_risk_profile,
-        dt_slp[, .("position_id" = ticker, slope)],
+        dt_slp[, .(position_id, slope)],
         by = "position_id",
         all.x = TRUE)
       
@@ -887,7 +953,7 @@ MeanCVaR <- R6::R6Class(
         by = "position_id",
         all.x = TRUE)
       
-      lst_risk_budget_max_min <- lapply(rsk_grp, function(x){
+      lst_risk_budget_max_min <- lapply(select_grps, function(x){
         dt_out <- dt_weight_range[grepl(x, location), .("min_weight" = sum(min_weight), "max_weight" = sum(max_weight))]  
         dt_out[, risk_budget_group := x]
         dt_out
@@ -913,10 +979,12 @@ MeanCVaR <- R6::R6Class(
       #------------------------------------------------------------------------------
       #-- Calculate Risk and check Risk-Budget Constraints                         --
       #------------------------------------------------------------------------------
-      
-      es_tester <- risk_calc_parallization(
-        as.matrix(dt_weight_weight_adjusted_sims),
+      message("------------------------------------------------------------------------------")
+      message("Identifying the simulated portfolio weights that comply with the risk-budget constraints.")
+      message("------------------------------------------------------------------------------")
+      es_tester <- risk_profile_monte_carlo(
         private$dt_pnl_simulations[, colnames(dt_weight_weight_adjusted_sims), with = FALSE],
+        as.matrix(dt_weight_weight_adjusted_sims),
         private$rsk_conf_level,
         private$max_use_cpu_cores)
       
@@ -926,13 +994,13 @@ MeanCVaR <- R6::R6Class(
       }))
       
       dt_check <- merge(
-        es_tester[, .(exec_id, "position_id" = ticker, weight, expected_shortfall, expected_shortfall_weight)],
+        es_tester[, .(exec_id, position_id, weight, expected_shortfall, risk_weight)],
         dt_portfolio_info[, .(position_id, risk_budget_group)],
         by = "position_id",
         all.x = TRUE)
       
       dt_check_agg <- dt_check[, .(weight = sum(weight),
-                                   es_attribution = sum(expected_shortfall_weight)),
+                                   es_attribution = sum(risk_weight)),
                                by = c("exec_id", "risk_budget_group")]
       dt_check_agg <- merge(
         dt_check_agg,
@@ -944,7 +1012,7 @@ MeanCVaR <- R6::R6Class(
       
       use_exec_ids <- dt_check_agg_by_exec_id[is_risk_budget_valid == TRUE]$exec_id
       dt_rsk_perf <- es_tester[exec_id %in% use_exec_ids]
-      setnames(dt_rsk_perf, "ticker", "position_id")
+      #setnames(dt_rsk_perf, "ticker", "position_id")
       
       dt_portfolio_info <- merge(
         dt_portfolio_info,
@@ -984,163 +1052,3 @@ MeanCVaR <- R6::R6Class(
   )
 )
 
-#-------------------------------------------------------------------------------
-#--                                                                           --
-#-- Create Master Table with All Necessary Columns                            --
-#--                                                                           --
-#-------------------------------------------------------------------------------
-# dt_instruments_name <- EnvisionRiskRaaS::envrsk_instrument_search()[,.(symbol, name)]
-# dt_master_table <- merge(
-#   dt_input_portfolio[, .(position_id, symbol, location, "current_weight" = weight, expected_annual_growth_rate)],
-#   dt_weight_constraints[, .(position_id, min_weight, max_weight)],
-#   by = "position_id",
-#   all.x = TRUE)
-# 
-# dt_master_table <- merge(
-#   dt_master_table,
-#   dt_instruments_name,
-#   by = "symbol",
-#   all.x = TRUE)
-# 
-# # Data Example
-# load_data <- list(
-#   "tbl_master_portfolio_information" = dt_master_table[,.(position_id, symbol, name, location, current_weight, expected_annual_growth_rate, min_weight, max_weight)],
-#   "tbl_profit_loss_simulations"      = tbl_pnl_simulations,
-#   "tbl_risk_budget_constraints"      = dt_risk_budget_constraints,
-#   "risk_free_interest_rate"          = 0.035,
-#   "horizon_days"                     = 252)
-
-#saveRDS(load_data, "C:/Users/jonas/Dropbox/Public/Data/load_asset_allocation_input_data_example.rds")
-
-#-------------------------------------------------------------------------------
-#--                                                                           --
-#-- Load the Example Data                                                     --
-#--                                                                           --
-#-------------------------------------------------------------------------------
-load_data <- readRDS(url("https://www.dropbox.com/scl/fi/lvhwcw55sjorcbucantqo/load_asset_allocation_input_data_example.rds?rlkey=vu6i7wrf4w9oben2hq87js29e&raw=true","rb"))
-
-tbl_portfolio                 <- load_data[["tbl_master_portfolio_information"]][, .(position_id, current_weight)]
-tbl_expected_mean_performance <- load_data[["tbl_master_portfolio_information"]][, .(position_id, expected_annual_growth_rate)]
-tbl_portfolio_organization    <- load_data[["tbl_master_portfolio_information"]][, .(position_id, location)]
-tbl_weight_constraints        <- load_data[["tbl_master_portfolio_information"]][, .(position_id, min_weight, max_weight)]
-tbl_pnl_simulations           <- load_data[["tbl_profit_loss_simulations"]]
-tbl_risk_budget_constraints   <- load_data[["tbl_risk_budget_constraints"]]
-#tbl_risk_budget_constraints[group == "Equities", constraint := 0.15]
-#tbl_risk_budget_constraints[group == "FixedIncome", constraint := 0.60]
-
-# tbl_risk_budget_constraints <- rbind(
-#   tbl_risk_budget_constraints,
-#       data.table("group" = "Alternatives",
-#                  "constraint" = 0.30),
-#       data.table("group" = "Cash",
-#                  "constraint" = 0.10))
-
-#-------------------------------------------------------------------------------
-#--                                                                           --
-#-- Initialize the MeanCVaR Object - Required                                 --
-#--                                                                           --
-#-------------------------------------------------------------------------------
-my_mean_cvar <- MeanCVaR$new(tbl_portfolio)
-my_mean_cvar$set_risk_free_interest_rate(0.035)
-my_mean_cvar$set_max_cores(10)
-my_mean_cvar$set_count_simulations(10000)
-
-
-#-------------------------------------------------------------------------------
-#--                                                                           --
-#-- Add Simulated Profit/Loss distribution, Expected Performance &            --
-#-- the Portfolio Organization (location of the position within the           --
-#-- portfolio)                                                                --
-#--                                                                           --
-#-------------------------------------------------------------------------------
-
-#-------------------------------------------------------------------------------
-#-- Required: Simulated PnL-distributions                                     --
-#-------------------------------------------------------------------------------
-my_mean_cvar$set_tbl_pnl_simulation(tbl_pnl_simulations)
-
-#-------------------------------------------------------------------------------
-#-- Required: Expected Performance                                            --
-#-------------------------------------------------------------------------------
-my_mean_cvar$set_tbl_expected_mean_performance(tbl_expected_mean_performance[,.(position_id, "performance" = expected_annual_growth_rate)])
-
-#-------------------------------------------------------------------------------
-#-- Optional (Required): Portfolio Organization                               --
-#-- If a risk-budget constraint is specified, it becomes mandatory/required.  --
-#-------------------------------------------------------------------------------
-my_mean_cvar$set_tbl_portfolio_location(tbl_portfolio_organization)
-
-#-------------------------------------------------------------------------------
-#--                                                                           --
-#-- Add Constraints (position weight-range, cardinality, risk-budget)         --
-#--                                                                           --
-#-------------------------------------------------------------------------------
-
-#-------------------------------------------------------------------------------
-#-- Optional: Portfolio Positions Weight Constraints                          --
-#-------------------------------------------------------------------------------
-my_mean_cvar$set_tbl_positions_weight_constraints(tbl_weight_constraints)
-#my_mean_cvar$reset_position_weight_constraint()
-
-#-------------------------------------------------------------------------------
-#-- Optional: Risk-Budget Constraints                                         --
-#-------------------------------------------------------------------------------
-my_mean_cvar$set_tbl_risk_budget_constraints(tbl_risk_budget_constraints)
-#my_mean_cvar$reset_risk_budget_constraint()
-#my_mean_cvar$get_tbl_risk_budget_constraints()
-
-#-------------------------------------------------------------------------------
-#--                                                                           --
-#-- Asset Allocation Analysis                                                 --
-#--                                                                           --
-#-------------------------------------------------------------------------------
-my_mean_cvar$.__enclos_env__$private$do_perform_asset_allocation_analysis()
-
-#-------------------------------------------------------------------------------
-#--                                                                           --
-#-- Extract Results - Optimal Portfolio Weights                               --
-#--                                                                           --
-#-------------------------------------------------------------------------------
-my_mean_cvar$.__enclos_env__$private$asset_allocation_analysis
-
-lst_asset_allocation_analysis <- pbapply::pblapply(1:10, function(x){
-  my_mean_cvar$.__enclos_env__$private$do_perform_asset_allocation_analysis()
-  my_mean_cvar$.__enclos_env__$private$asset_allocation_analysis
-})
-
-lapply(lst_asset_allocation_analysis, function(x){
-  x[["PORTFOLIO_TANGENT_LINE"]]
-})
-
-lst_rsk_budget <- lapply(lst_asset_allocation_analysis, function(x){
-  x[["SUMMARY_MARKET_PORTFOLIO_BY_RISK_BUDGET"]]
-})
-dt_rsk_budget <- rbindlist(lst_rsk_budget)
-dt_rsk_budget_melt <- melt.data.table(dt_rsk_budget, id.vars = c("group", "exec_id")) 
-setnames(dt_rsk_budget_melt, "variable", "measure")
-
-dt_rsk_budget_melt$exec_id <- factor(dt_rsk_budget_melt$exec_id, levels = unique(dt_rsk_budget_melt$exec_id), labels = paste0("Sc_", 1:length(unique(dt_rsk_budget_melt$exec_id))))
-ggplot(dt_rsk_budget_melt[measure == "weight"], aes(x = exec_id, y = value, fill = group)) +
-  geom_bar(stat = "identity") 
-
-
-lst_optimal_weight <- lapply(lst_asset_allocation_analysis, function(x){
-  x[["OPTIMAL_WEIGHTS_MARKET_PORTFOLIO"]]
-})
-dt_optimal_weight <- rbindlist(lst_optimal_weight)
-dt_optimal_weight_melt <- melt.data.table(dt_optimal_weight, id.vars = c("exec_id", "position_id")) 
-setnames(dt_optimal_weight_melt, "variable", "measure")
-
-dt_optimal_weight_melt$exec_id <- factor(dt_optimal_weight_melt$exec_id, 
-                                         levels = unique(dt_optimal_weight_melt$exec_id), 
-                                         labels = paste0("Sc_", 1:length(unique(dt_optimal_weight_melt$exec_id))))
-library("viridis") 
-library(wesanderson)
-wes_palette("Zissou1", 33, type = "continuous")
-ggplot(dt_optimal_weight_melt[measure == "optimal_weights"], aes(x = exec_id, y = value, fill = position_id)) +
-  geom_bar(stat = "identity", col = wes_palette("Zissou1", 33, type = "discrete"))+
-  scale_fill_wviridis(discrete = TRUE)
-
-
-EnvisionRiskRaaS::envrsk_instrument_expected_shortfall_raw(Sys.Date(), "SPY.US", horizon = 5, signif_level = 0.95, volatility_id = "downturn")
-EnvisionRiskRaaS::envrsk_market_price_raw("SPY.US")

@@ -169,9 +169,10 @@ condition_weight <- function(x, p_min_weight, p_max_weight){
   return(0)
 }
 
-risk_calc_parallization <- function(p_dt_weigtht, p_sim_pnl, p_rsk_conf_level, n_cores = 1){
-  count_port_weights <- nrow(p_dt_weigtht)
-  dt_weigtht <- copy(p_dt_weigtht)
+#risk_calc_parallization <- function(p_dt_weigtht, p_sim_pnl, p_rsk_conf_level, n_cores = 1){
+risk_profile_monte_carlo <- function(tbl_pnl_simulations, tbl_weights, p_alfa = 0.975, n_cores = 1){
+  count_port_weights <- nrow(tbl_weights)
+  dt_weigtht         <- copy(tbl_weights)
   
   message(paste0("The cluster is configured with ", n_cores, " core(s) to compute the Expected Shortfall \nfor each simulated set of portfolio weights."))
   cl <- parallel::makeCluster(n_cores)
@@ -196,8 +197,8 @@ risk_calc_parallization <- function(p_dt_weigtht, p_sim_pnl, p_rsk_conf_level, n
     width = 60)
   
   # Iterate
-  m_pnl_sim    <- as.matrix(p_sim_pnl)
-  ticker_names <- colnames(p_sim_pnl)
+  m_pnl_sim    <- as.matrix(tbl_pnl_simulations)
+  position_ids <- colnames(tbl_pnl_simulations)
   dt_es <- foreach::foreach(i=1:count_port_weights,
                              .packages=c('data.table', 'Rcpp', 'EnvRskAssetAllocationHelpers'),
                              .combine = rbind,
@@ -216,13 +217,16 @@ risk_calc_parallization <- function(p_dt_weigtht, p_sim_pnl, p_rsk_conf_level, n
         m_pnl_sim, 
         w, 
         component = TRUE, 
-        confidence_level = p_rsk_conf_level)  
+        confidence_level = p_alfa)  
       
+      risk_weights <- es[-1]/as.numeric(es[1])
+      slopes       <- risk_weights / w
       data.table("exec_id"            = exec_id,
-                 "ticker"             = ticker_names,
+                 "position_id"        = position_ids,
                  "weight"             = w,
-                 "expected_shortfall" = es[-1],
-                 "expected_shortfall_weight" = es[-1]/as.numeric(es[1]))
+                 "slope"              = slopes,
+                 "expected_shortfall" = -es[-1],
+                 "risk_weight"        = risk_weights)
     })
     dt_values <- rbindlist(es_values)
     dt_values
@@ -238,11 +242,10 @@ risk_calc_parallization <- function(p_dt_weigtht, p_sim_pnl, p_rsk_conf_level, n
   return(dt_es)
 }
 
-#### RISK PROFILING ####
-risk_profile_gaussian <- function(dt_pnl_simulations, dt_weights, p_alfa = 0.975){
-  n_sim       <- nrow(dt_weights)
-  V_Sigma     <- cov(dt_pnl_simulations[, colnames(dt_weights), with = FALSE])
-  my_vector   <- round(apply(dt_pnl_simulations[, colnames(dt_weights), with = FALSE], 2, "mean"), 6)
+risk_profile_gaussian <- function(tbl_pnl_simulations, tbl_weights, p_alfa = 0.975){
+  n_sim       <- nrow(tbl_weights)
+  V_Sigma     <- cov(tbl_pnl_simulations[, colnames(tbl_weights), with = FALSE])
+  my_vector   <- round(apply(tbl_pnl_simulations[, colnames(tbl_weights), with = FALSE], 2, "mean"), 6)
   
   es_component_gaussian <- function(w, Sigma, alfa){
     weight_vec <- as.numeric(w)
@@ -254,18 +257,19 @@ risk_profile_gaussian <- function(dt_pnl_simulations, dt_weights, p_alfa = 0.975
     es_l <- as.numeric(my_l + as.numeric(dnorm(qnorm(alfa)) / (1 - alfa)) * sigma_l)
     
     scaler <- as.numeric(dnorm(qnorm(alfa)) / (1 - alfa)) 
-    rb <- - my_vector + scaler * t(sigma_v)/sigma_l
+    rb     <- - my_vector + scaler * t(sigma_v)/sigma_l
     dt_out <- data.table(
       "position_id" = names(w),
       "weight"      = c(weight_vec), 
       "slope"       = c(rb)/es_l)
     dt_out[, exec_id := EnvRskHelpers::HashedId(1)]
     dt_out[, risk_weight := slope * weight]
+    dt_out[, expected_shortfall := risk_weight * es_l]
     return(dt_out)
   }
   
-  lst_es_component <- lapply(1:nrow(dt_weights), function(x){
-    es_component_gaussian(dt_weights[x, ], V_Sigma, p_alfa)
+  lst_es_component <- lapply(1:nrow(tbl_weights), function(x){
+    es_component_gaussian(tbl_weights[x, ], V_Sigma, p_alfa)
   })
   dt_es_component <- rbindlist(lst_es_component)
   
@@ -444,29 +448,29 @@ normalize <- function(v_weight){
 comb_risk_perf <- function(dt_es, dt_perf){
   dt_es_comb <- merge(dt_es, 
                       dt_perf, 
-                      by = "ticker", 
+                      by = "position_id", 
                       all.x = TRUE)
   dt_es_comb[, performance_weighted := performance * weight]
-  setorder(dt_es_comb, "exec_id")
+  #setorder(dt_es_comb, "exec_id")
   dt_es_comb[, performance := NULL]
   setnames(dt_es_comb, "performance_weighted", "performance")
   
   return(dt_es_comb)
 }
 
-slope_analysis <- function(tickers, dt_es_comb){
+slope_analysis <- function(position_ids, dt_es_comb){
   # If the slope > 1 then the ticker tend to add risk to the portfolio more than 
   # its weight. While if the slope < 1 the ticker tend to reduce risk.
   calc_es_comp_slope_2_weight <- function(use_ticker){
-    data_4_analysis <- dt_es_comb[ticker == use_ticker & weight != 0, .(weight, expected_shortfall_weight)]
+    data_4_analysis <- dt_es_comb[position_id == use_ticker & weight != 0, .(weight, risk_weight)]
     #plot(data_4_analysis)
-    my_glm <- glm(expected_shortfall_weight ~ 0 + weight, data = data_4_analysis)
+    my_glm <- glm(risk_weight ~ 0 + weight, data = data_4_analysis)
     my_coef <- coef(my_glm)
-    return(data.table("ticker" = use_ticker,
+    return(data.table("position_id" = use_ticker,
                       "slope"  = as.numeric(my_coef)))
   }
   
-  lst_slopes <- lapply(tickers, function(x){
+  lst_slopes <- lapply(position_ids, function(x){
     calc_es_comp_slope_2_weight(x)  
   })
   dt_slopes <- rbindlist(lst_slopes)
@@ -477,197 +481,317 @@ slope_analysis <- function(tickers, dt_es_comb){
   return(dt_slopes)
 }
 
-efficient_frontier <- function(dt_rsk, p_rsk_free_rate){
-  min_es <- min(-dt_rsk$ES)
-  max_es <- max(-dt_rsk$ES)
-  count_es_buckets <- 25
-  ex_bucket_length <- (max_es - min_es) / count_es_buckets
-  dt_rsk[, silo := cut(-dt_rsk$ES, breaks = c(min_es, min_es+1:count_es_buckets*ex_bucket_length), include.lowest = TRUE)]
+# efficient_frontier <- function(dt_rsk, p_rsk_free_rate){
+#   min_es <- min(-dt_rsk$ES)
+#   max_es <- max(-dt_rsk$ES)
+#   count_es_buckets <- 25
+#   ex_bucket_length <- (max_es - min_es) / count_es_buckets
+#   dt_rsk[, silo := cut(-dt_rsk$ES, breaks = c(min_es, min_es+1:count_es_buckets*ex_bucket_length), include.lowest = TRUE)]
+#   
+#   dt_tmp_1 <- dt_rsk[, .("avg_es" = mean(-ES), "max_perf" = max(PERF), "max_perf_scenario" = .I[which.max(PERF)]), by = silo]
+#   setorder(dt_tmp_1, "avg_es")
+#   
+#   dt_tmp_rm <- copy(dt_tmp_1)
+#   dt_tmp_rm[, keep := NA_integer_]
+#   latest_max <- dt_tmp_rm[1, max_perf]
+#   n_rows <- nrow(dt_tmp_rm)
+#   for(i in 1:n_rows){
+#     #i <- 1
+#     
+#     this_max <- dt_tmp_rm[i, max_perf]
+#     
+#     if(this_max >= latest_max){
+#       latest_max <- this_max
+#       dt_tmp_rm[i]$keep <- 1
+#     } else {
+#       dt_tmp_rm[i]$keep <- 0
+#     }
+#   }
+#   setorder(dt_tmp_rm, "avg_es")
+#   
+#   #### ####
+#   
+#   dt_tmp_rm <- dt_tmp_rm[keep == 1]
+#   #plot(dt_tmp_rm$avg_es, dt_tmp_rm$max_perf)
+#   n_rows <- nrow(dt_tmp_rm)
+#   for(i in 1:(n_rows - 2)){
+#     #i <- 1
+#     this_max <- dt_tmp_rm[i, max_perf]
+#     tanget_1 <- (dt_tmp_rm[i+1, max_perf]-dt_tmp_rm[i, max_perf])/(dt_tmp_rm[i+1, avg_es]-dt_tmp_rm[i, avg_es])
+#     tanget_2 <- (dt_tmp_rm[i+2, max_perf]-dt_tmp_rm[i, max_perf])/(dt_tmp_rm[i+2, avg_es]-dt_tmp_rm[i, avg_es])  
+#     
+#     if(tanget_2 >= tanget_1){
+#       dt_tmp_rm[i+1]$keep <- 0
+#     } else {
+#       dt_tmp_rm[i+1]$keep <- 1
+#     }
+#   }
+#   setorder(dt_tmp_rm, "avg_es")
+#   
+#   dt_tmp_rm <- dt_tmp_rm[keep == 1]
+#   #plot(dt_tmp_rm$avg_es, dt_tmp_rm$max_perf)
+#   
+#   n_rows <- nrow(dt_tmp_rm)
+#   dt_tmp_rm[, tangent := NA_real_]
+#   for(i in 1:n_rows){
+#     tanget_rsk_free_rate <- (dt_tmp_rm[i, max_perf]-p_rsk_free_rate)/dt_tmp_rm[i, avg_es]
+#     dt_tmp_rm[i]$tangent <- tanget_rsk_free_rate
+#   }
+#   setorder(dt_tmp_rm, "avg_es")
+#   
+#   #### PRUNE ####
+#   dt_tangents <- copy(dt_tmp_rm)
+#   dt_tangents[, index := 1:nrow(dt_tangents)]
+#   
+#   dt_tan_scenarios <- data.table(expand.grid(1:nrow(dt_tangents), 1:nrow(dt_tangents)))
+#   setnames(dt_tan_scenarios, "Var1", "Sce1")
+#   setnames(dt_tan_scenarios, "Var2", "Sce2")
+#   dt_tan_scenarios <- dt_tan_scenarios[Sce2 > Sce1]
+#   setorder(dt_tan_scenarios, "Sce1")
+#   
+#   lst_tanget_out <- lapply(1:nrow(dt_tan_scenarios), function(x){
+#     #i <- 1
+#     dt_out <- dt_tan_scenarios[x,]
+#     p_1 <- dt_tangents[index == dt_out$Sce1,]
+#     p_2 <- dt_tangents[index == dt_out$Sce2,]
+#     tangent <- (p_2$max_perf - p_1$max_perf) / ((p_2$avg_es - p_1$avg_es)) 
+#     dt_out[, tangent := tangent]
+#   })
+#   dt_tangent_out <- rbindlist(lst_tanget_out)
+#   
+#   dt_tangent_in <- copy(dt_tangent_out)
+#   for(i in 1:(nrow(dt_tangent_in) - 1)){
+#     #i <- 1
+#     dt_tangent_in_tmp <- dt_tangent_in[Sce1 == i,]
+#     if(nrow(dt_tangent_in_tmp) != 0){
+#       select_ind <- dt_tangent_in_tmp[, which.max(tangent)]
+#       select_sce <- dt_tangent_in_tmp[select_ind, .(Sce1, Sce2)]
+#       dt_tangent_in <- dt_tangent_in[!(Sce1 == i & Sce2 != select_sce$Sce2)]
+#       
+#       select_sce <- select_sce$Sce1:select_sce$Sce2
+#       select_sce <- select_sce[data.table::between(select_sce, min(select_sce), max(select_sce), incbounds=FALSE)]
+#       
+#       dt_tangent_in <- dt_tangent_in[!Sce1 %in% select_sce]
+#     }
+#   }
+#   select_sce <- 1:nrow(dt_tangents)
+#   select_sce <- select_sce[data.table::between(select_sce, min(select_sce), max(select_sce), incbounds=FALSE)] 
+#   remove_sce <- select_sce[!select_sce %in% dt_tangent_in$Sce1]
+#   dt_tangents <- dt_tangents[!index %in% remove_sce]
+#   return(dt_tangents)
+# }
+
+efficient_frontier <- function(tbl_risk_profile, tbl_expected_mean_performance, p_rsk_free_rate, breaks = 10){
+  stopifnot(all(c("position_id", "weight", "slope", "exec_id", "risk_weight", "expected_shortfall") %in% colnames(tbl_risk_profile)))
+  stopifnot(all(c("position_id", "performance") %in% colnames(tbl_expected_mean_performance)))
   
-  dt_tmp_1 <- dt_rsk[, .("avg_es" = mean(-ES), "max_perf" = max(PERF), "max_perf_scenario" = .I[which.max(PERF)]), by = silo]
-  setorder(dt_tmp_1, "avg_es")
+  dt_risk_profile              <- copy(tbl_risk_profile)
+  dt_expected_mean_performance <- copy(tbl_expected_mean_performance)
   
-  dt_tmp_rm <- copy(dt_tmp_1)
-  dt_tmp_rm[, keep := NA_integer_]
-  latest_max <- dt_tmp_rm[1, max_perf]
-  n_rows <- nrow(dt_tmp_rm)
-  for(i in 1:n_rows){
-    #i <- 1
-    
-    this_max <- dt_tmp_rm[i, max_perf]
-    
-    if(this_max >= latest_max){
-      latest_max <- this_max
-      dt_tmp_rm[i]$keep <- 1
-    } else {
-      dt_tmp_rm[i]$keep <- 0
+  dt_risk_comp    <- comb_risk_perf(
+    dt_risk_profile[,.(position_id, weight, expected_shortfall, risk_weight, exec_id)], 
+    dt_expected_mean_performance[,.("position_id" = position_id, 
+                                    "performance" = performance)])
+  #setnames(dt_risk_comp, "ticker", "position_id")
+  #setnames(dt_risk_comp, "expected_shortfall_weight", "risk_weight")
+  
+  dt_risk <- dt_risk_comp[,.("RISK" = sum(expected_shortfall), 
+                             "PERF" = sum(performance)), by = "exec_id"]
+  
+  dt_risk_perf <- merge(
+    dt_risk_comp,
+    dt_risk[,.(exec_id, PERF)],
+    by = "exec_id",
+    all.x = TRUE)
+  dt_risk_perf[, perf_weight := performance / PERF]
+  dt_risk_perf[, PERF := NULL]
+  
+  dt_risk_perf <- merge(
+    dt_risk_profile[,.(exec_id, position_id)],
+    dt_risk_perf,
+    by = c("exec_id", "position_id"),
+    all.x = TRUE,
+    sort = FALSE)
+  
+  range_min    <- min(dt_risk[["RISK"]])
+  range_max    <- max(dt_risk[["RISK"]])
+  diff         <- range_max - range_min
+  delta        <- 0.01
+  count_breaks <- breaks  
+  
+  inner_breaks                   <- quantile(dt_risk[["RISK"]], seq(0, 1, 1/count_breaks))
+  inner_breaks[1]                <- inner_breaks[1] - delta
+  inner_breaks[count_breaks + 1] <- inner_breaks[count_breaks + 1] + delta
+  dt_risk[, risk_range := cut(RISK, breaks = inner_breaks)]
+  
+  dt_slope <- dt_risk[, .("PERF" = max(PERF), 
+                          "index" = .I[which.max(PERF)]), by = "risk_range"]
+  dt_slope[, ":=" (RISK = dt_risk[index][["RISK"]], 
+                   exec_id = dt_risk[index][["exec_id"]])]
+  setorder(dt_slope, "RISK")
+  
+  #### tangent ####
+  dt_slope_tangent <- copy(dt_slope)
+  tangent_condition <- TRUE
+  while(tangent_condition){
+    count_rows_b4 <- nrow(dt_slope_tangent)
+    dt_slope_tangent[, row_keep := PERF - shift(PERF, n = 1, type = "lag") >= 0]
+    dt_slope_tangent[1, row_keep := TRUE]
+    dt_slope_tangent[.N, row_keep := TRUE]
+    dt_slope_tangent <- dt_slope_tangent[row_keep == TRUE]
+    count_rows_aft <- nrow(dt_slope_tangent)
+    if(count_rows_b4 == count_rows_aft){
+      tangent_condition <- FALSE  
     }
   }
-  setorder(dt_tmp_rm, "avg_es")
   
-  #### ####
-  
-  dt_tmp_rm <- dt_tmp_rm[keep == 1]
-  #plot(dt_tmp_rm$avg_es, dt_tmp_rm$max_perf)
-  n_rows <- nrow(dt_tmp_rm)
-  for(i in 1:(n_rows - 2)){
-    #i <- 1
-    this_max <- dt_tmp_rm[i, max_perf]
-    tanget_1 <- (dt_tmp_rm[i+1, max_perf]-dt_tmp_rm[i, max_perf])/(dt_tmp_rm[i+1, avg_es]-dt_tmp_rm[i, avg_es])
-    tanget_2 <- (dt_tmp_rm[i+2, max_perf]-dt_tmp_rm[i, max_perf])/(dt_tmp_rm[i+2, avg_es]-dt_tmp_rm[i, avg_es])  
+  tangent_condition <- TRUE
+  while(tangent_condition){
+    count_rows_b4 <- nrow(dt_slope_tangent)
     
-    if(tanget_2 >= tanget_1){
-      dt_tmp_rm[i+1]$keep <- 0
-    } else {
-      dt_tmp_rm[i+1]$keep <- 1
+    dt_slope_tangent[, row_keep := FALSE]
+    dt_slope_tangent[, ":=" (tangent_mid = (shift(PERF, n = 1, type = "lead") - shift(PERF, n = 1, type = "lag")) / (shift(RISK, n = 1, type = "lead") - shift(RISK, n = 1, type = "lag")), 
+                             tangent_left = (PERF - shift(PERF, n = 1, type = "lag")) / (RISK - shift(RISK, n = 1, type = "lag")))]
+    dt_slope_tangent[, row_keep := tangent_mid < tangent_left]
+    dt_slope_tangent[1, row_keep := TRUE]
+    dt_slope_tangent[.N, row_keep := TRUE]
+    dt_slope_tangent <- dt_slope_tangent[row_keep == TRUE]
+    count_rows_aft <- nrow(dt_slope_tangent)
+    if(count_rows_b4 == count_rows_aft){
+      tangent_condition <- FALSE  
     }
+    dt_slope_tangent[, ":=" (row_keep = NULL, tangent_mid = NULL, tangent_left = NULL)]
   }
-  setorder(dt_tmp_rm, "avg_es")
   
-  dt_tmp_rm <- dt_tmp_rm[keep == 1]
-  #plot(dt_tmp_rm$avg_es, dt_tmp_rm$max_perf)
+  #### ADD MIN RISK ####
+  dt_rsk_min_risk <- dt_risk[RISK == min(RISK) & PERF > 0, .(exec_id, PERF, RISK)]
   
-  n_rows <- nrow(dt_tmp_rm)
-  dt_tmp_rm[, tangent := NA_real_]
-  for(i in 1:n_rows){
-    tanget_rsk_free_rate <- (dt_tmp_rm[i, max_perf]-p_rsk_free_rate)/dt_tmp_rm[i, avg_es]
-    dt_tmp_rm[i]$tangent <- tanget_rsk_free_rate
-  }
-  setorder(dt_tmp_rm, "avg_es")
+  dt_efficient_frontier <- rbind(
+    dt_rsk_min_risk,
+    dt_slope_tangent[, .(exec_id, PERF, RISK)])
+  dt_efficient_frontier <- unique(dt_efficient_frontier)  
+  dt_efficient_frontier[, slope := (PERF - p_rsk_free_rate) / RISK]
   
-  #### PRUNE ####
-  dt_tangents <- copy(dt_tmp_rm)
-  dt_tangents[, index := 1:nrow(dt_tangents)]
+  optimal_weight_exec_id <- dt_efficient_frontier[slope == max(slope)][["exec_id"]]
+  dt_weight_optimum      <- dt_risk_profile[exec_id == optimal_weight_exec_id, .(position_id, weight)]
+  stopifnot(round(sum(dt_weight_optimum[["weight"]]), 4) == 1)
+  #dt_weight_optimum_cast <- dcast.data.table(dt_weight_optimum, . ~ position_id, value.var = "weight")[, -1, with = FALSE]
   
-  dt_tan_scenarios <- data.table(expand.grid(1:nrow(dt_tangents), 1:nrow(dt_tangents)))
-  setnames(dt_tan_scenarios, "Var1", "Sce1")
-  setnames(dt_tan_scenarios, "Var2", "Sce2")
-  dt_tan_scenarios <- dt_tan_scenarios[Sce2 > Sce1]
-  setorder(dt_tan_scenarios, "Sce1")
-  
-  lst_tanget_out <- lapply(1:nrow(dt_tan_scenarios), function(x){
-    #i <- 1
-    dt_out <- dt_tan_scenarios[x,]
-    p_1 <- dt_tangents[index == dt_out$Sce1,]
-    p_2 <- dt_tangents[index == dt_out$Sce2,]
-    tangent <- (p_2$max_perf - p_1$max_perf) / ((p_2$avg_es - p_1$avg_es)) 
-    dt_out[, tangent := tangent]
-  })
-  dt_tangent_out <- rbindlist(lst_tanget_out)
-  
-  dt_tangent_in <- copy(dt_tangent_out)
-  for(i in 1:(nrow(dt_tangent_in) - 1)){
-    #i <- 1
-    dt_tangent_in_tmp <- dt_tangent_in[Sce1 == i,]
-    if(nrow(dt_tangent_in_tmp) != 0){
-      select_ind <- dt_tangent_in_tmp[, which.max(tangent)]
-      select_sce <- dt_tangent_in_tmp[select_ind, .(Sce1, Sce2)]
-      dt_tangent_in <- dt_tangent_in[!(Sce1 == i & Sce2 != select_sce$Sce2)]
-      
-      select_sce <- select_sce$Sce1:select_sce$Sce2
-      select_sce <- select_sce[data.table::between(select_sce, min(select_sce), max(select_sce), incbounds=FALSE)]
-      
-      dt_tangent_in <- dt_tangent_in[!Sce1 %in% select_sce]
-    }
-  }
-  select_sce <- 1:nrow(dt_tangents)
-  select_sce <- select_sce[data.table::between(select_sce, min(select_sce), max(select_sce), incbounds=FALSE)] 
-  remove_sce <- select_sce[!select_sce %in% dt_tangent_in$Sce1]
-  dt_tangents <- dt_tangents[!index %in% remove_sce]
-  return(dt_tangents)
+  market_portfolio <- dt_efficient_frontier[exec_id == optimal_weight_exec_id]
+  return(
+    list(
+      "TblRiskPerformance"  = dt_risk_perf,
+      "RiskFreeRate"        = p_rsk_free_rate,
+      "EfficientFrontier"   = dt_efficient_frontier,
+      "MarketPortfolio"     = market_portfolio,
+      "OptimalWeights"      = dt_weight_optimum))
 }
 
-plot_efficient_frontier <- function(p_lst_mean_cvar_analysis, lst_input_port = NULL){ 
-  #p_lst_mean_cvar_analysis <- lst_mean_cvar_analysis
-  p_rsk_free_rate <- p_lst_mean_cvar_analysis[["RiskFreeRate"]]
-  dt_eff_frnt <- p_lst_mean_cvar_analysis[["EfficientFrontier"]]
-  dt_4_plot <- copy(dt_eff_frnt[,.(avg_es, max_perf, "tangent" = tangent)])
+plot_efficient_frontier <- function(lst_mean_cvar_analysis){ 
+  # lst_mean_cvar_analysis <- lst_eff_frontier
+  rsk_free_rate <- lst_mean_cvar_analysis[["RiskFreeRate"]]
+  dt_eff_frnt   <- lst_mean_cvar_analysis[["EfficientFrontier"]]
   
-  #### TANGET CALC ####
-  fix_point_opt_port <- dt_4_plot[which.max(tangent)]
-  slope <- (fix_point_opt_port$max_perf - p_rsk_free_rate) / (fix_point_opt_port$avg_es - 0.0)
+  dt_4_plot     <- copy(dt_eff_frnt[,.(RISK, PERF, slope)])
+  dt_4_plot[, portfolio := "efficient_frontier"]
+  dt_4_plot[RISK == min(RISK), portfolio := "min_risk"]
+  dt_4_plot[slope == max(slope), portfolio := "market_portfolio"]
   
-  #### ####
-  dt_risk_perf <- p_lst_mean_cvar_analysis[["OptimalWeights"]][,.(ticker, performance, risk)]
-  dt_4_plot[, ticker := ""]
-  dt_4_plot_risk_perf <- dt_risk_perf[, .("avg_es"   = risk, 
-                                          "max_perf" = performance, 
-                                          "ticker"   = ticker,
-                                          "tangent"  = NA_real_)]
-  dt_4_plot <- rbind(dt_4_plot,
-                     dt_4_plot_risk_perf)
-  dt_4_plot <- rbind(dt_4_plot,
-                     data.table("avg_es"   = 0.0,
-                                "max_perf" = p_rsk_free_rate,
-                                "ticker"   = "RiskfreeRate",
-                                "tangent"  = NA_real_))
+  dt_4_plot <- rbind(
+    data.table("RISK" = 0.0,
+               "PERF" = rsk_free_rate,
+               "slope" = 0.0,
+               "portfolio" = "risk_free"),
+    dt_4_plot)
   
-  p1 <- ggplot(dt_4_plot, aes(x = avg_es, y = max_perf)) + 
-    geom_point(color = dplyr::case_when(dt_4_plot$ticker == "" ~ "blue", 
-                                        dt_4_plot$ticker == "RiskfreeRate" ~ "green",
-                                        TRUE ~ "red"), size = 1, alpha = 0.8) + 
-    geom_line(data    = dt_4_plot[ticker == ""], 
-              mapping = aes(x = avg_es, 
-                            y = max_perf), 
-              color = "blue") +
-    geom_text(aes(label = ifelse(ticker != "", as.character(ticker), '')), 
-              hjust = -0.20, 
-              vjust = 0.4, 
-              size  = 1.5)+
-    geom_abline(slope     = slope, 
-                intercept = p_rsk_free_rate, 
-                linetype = "dashed") +
-    geom_text(aes(x = -lst_input_port[["ExpectedShortfall"]], 
-                  y = lst_input_port[["PnL"]]), 
-                  label  ="★", 
-                  vjust  = "center", 
-                  hjust  = "center",
-                  size   = 5, 
-                  colour = "gray")+
-    geom_label(
-      label      = "Original Portfolio", 
-      x          = -lst_input_port[["ExpectedShortfall"]],
-      y          = lst_input_port[["PnL"]],
-      label.size = NA,
-      vjust      = "inward", 
-      hjust      = "outward",
-      color      = "gray",
-      fill       = NA,
-      size       = 3) +
-    geom_text(aes(x = p_lst_mean_cvar_analysis[["MarketPortfolio"]][["avg_es"]], 
-                  y = p_lst_mean_cvar_analysis[["MarketPortfolio"]][["max_perf"]]), 
-                  label  = "★", 
-                  vjust  = "bottom",
-                  size   = 5, 
-                  colour = "blue")+
-    geom_label(
-        label      = "Market Portfolio", 
-        x          = p_lst_mean_cvar_analysis[["MarketPortfolio"]][["avg_es"]],
-        y          = p_lst_mean_cvar_analysis[["MarketPortfolio"]][["max_perf"]],
-        label.size = NA,
-        vjust      = "outward", 
-        hjust      = "outward",
-        color      = "blue",
-        fill       = NA,
-        size       = 3) +
+  #RColorBrewer::display.brewer.all()
+  #my_text <- "GFG annotate text \nin ggplot R" #paste0(tangent_line, "/n", tangent_line)
+  
+  eperf_slope     <- round(dt_4_plot[portfolio == "market_portfolio"][["slope"]], 3) 
+  eperf_intercept <- round(rsk_free_rate, 3)  
+  erisk_slope     <- round(1/eperf_slope, 3)
+  erisk_intercept <- round(-rsk_free_rate / eperf_slope, 3) 
+  use_label <- paste(
+    c(
+      paste0("Expected Performance := ", paste0(eperf_intercept, " + ", eperf_slope, " * CVaR")),
+      paste0("Expected CVaR := ", paste0(erisk_intercept, " + ", erisk_slope, " * Expected Performance")))
+    , collapse = " \n")
+
+  plot_effecient_frontier <- ggplot(dt_4_plot, aes(x = RISK, y = PERF)) +
+    geom_line(data = dt_4_plot[portfolio != "risk_free"], colour = "darkgray", linetype = "dashed")+
+    geom_point(aes(colour = portfolio, shape = portfolio), size = 2.5) +
+    scale_colour_brewer(name = "", palette = "Set1") + 
+    scale_shape_manual(name = "", values = 15:18) +
+    geom_abline(slope     = dt_4_plot[portfolio == "market_portfolio"][["slope"]], 
+                intercept = rsk_free_rate, 
+                linetype = "longdash")  +
     theme_bw()+
+    theme(legend.position="bottom")+
     xlab("CVaR")+
     ylab("Expected Performance")+
+    annotate(geom  = "text",
+             x     = 0,
+             y     = dt_4_plot[PERF == max(PERF)][["PERF"]],
+             label = use_label,
+             color = RColorBrewer::brewer.pal(9, "Set1")[7],
+             hjust = 0,
+             parse = FALSE)+
     labs(
-      title    = "Strategic Asset Allocation",
-      subtitle = paste0(ceiling(p_lst_mean_cvar_analysis[["HorizonYears"]]), " Year Horizon"))
-  return(p1)
+      title = "Efficient Frontier")
+  return(plot_effecient_frontier)
 }
+
+GetRegressionValue <- function(explanatory_value, slope, intercept){
+  intercept + slope * explanatory_value
+}
+
+# eperf_slope     <- 0.182
+# eperf_intercept <- rsk_free_rate
+# erisk_slope     <- 1/eperf_slope
+# erisk_intercept <- -rsk_free_rate / eperf_slope
+
+ExpectedPerformance <- function(expected_cvar){
+  GetRegressionValue(expected_cvar, eperf_slope, eperf_intercept)
+}
+
+ExpectedCVaR <- function(expected_performance){
+  GetRegressionValue(expected_performance, erisk_slope, erisk_intercept)
+}
+
+WeightMarketPortfolioByTargetPerformance <- function(target_performance, risk_markeds_portfolio){
+  w <- 1 - ExpectedCVaR(target_performance) / risk_markeds_portfolio  
+  return(w)
+}
+WeightBankBookByTargetPerformance <- function(target_performance, risk_markeds_portfolio){
+  w <- ExpectedCVaR(target_performance) / risk_markeds_portfolio  
+  return(w)
+}
+# WeightMarketPortfolioByTargetPerformance(0.06, 0.277)
+# WeightBankBookByTargetPerformance(0.06, 0.277)
+
+WeightMarketPortfolioByTargetRisk <- function(target_risk, risk_markeds_portfolio){
+  w <- 1 - target_risk / risk_markeds_portfolio  
+  return(w)
+}
+
+WeightBankBookByTargetRisk <- function(target_risk, risk_markeds_portfolio){
+  w <- target_risk / risk_markeds_portfolio  
+  return(w)
+}
+# WeightMarketPortfolioByTargetRisk(0.138, 0.277)
+# WeightBankBookByTargetRisk(0.138, 0.277)
+
+
 
 #### INDIVIDUAL RISK ####
 calc_individual_risk <- function(sim_pnl, dt_perf, confidence_level){
   es <- apply(sim_pnl, 2, function(x){
     expected_shortfall(x, confidence_level)  
   })
-  dt_risk <- data.table("ticker" = names(es),
+  dt_risk <- data.table("position_id" = names(es),
                         "risk" = -es)
   
-  dt_risk_perf <- merge(dt_perf, dt_risk, by = "ticker", all.x = TRUE)
+  dt_risk_perf <- merge(dt_perf, dt_risk, by = "position_id", all.x = TRUE)
   setorder(dt_risk_perf, "performance")  
   return(dt_risk_perf)
 }

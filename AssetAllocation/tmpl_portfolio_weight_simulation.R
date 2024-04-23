@@ -230,8 +230,9 @@ constraint_weight <- function(p_dt_weights, p_weight_lower, p_weight_upper){
 #-- Simulated Profit/Loss Vectors (delta-vectors)                             --
 #--                                                                           --
 #-------------------------------------------------------------------------------
+volatility_ids <- c("downturn", "through_the_cycle", "point_in_time")
 tbl_expected_performance <- copy(dt_input_portfolio[,.(position_id, expected_annual_growth_rate)])
-lst_expected_performance <- lapply(c("extreme_stress", "severe_stress", "through_the_cycle", "point_in_time"), function(x){
+lst_expected_performance <- lapply(volatility_ids, function(x){
   dt_out <- copy(tbl_expected_performance)
   dt_out[, volatility_id := x]
 })
@@ -240,7 +241,7 @@ tbl_expected_performance <- rbindlist(lst_expected_performance)
 #-------------------------------------------------------------------------------
 #-- Simulated 1-day Profit/Loss Vectors (delta-vectors)                       --
 #-------------------------------------------------------------------------------
-lst_one_day_delta_vector_pct <- pbapply::pblapply(c("extreme_stress", "severe_stress", "through_the_cycle", "point_in_time"), function(x){
+lst_one_day_delta_vector_pct <- pbapply::pblapply(volatility_ids, function(x){
   dt_one_day_delta_vector_pct <- get_one_day_pnl_pct(
     unique(dt_input_portfolio$symbol),
     base_cur,
@@ -250,66 +251,76 @@ lst_one_day_delta_vector_pct <- pbapply::pblapply(c("extreme_stress", "severe_st
   dt_one_day_delta_vector_pct
 })
 dt_one_day_delta_vector_pct <- do.call(rbind, lst_one_day_delta_vector_pct)
-dt_one_day_delta_vector_pct[volatility_id == "point_in_time", volatility_id := "bull_run"]
 stopifnot(all(c("symbol", "scenario", "pnl_pct") %in% colnames(dt_one_day_delta_vector_pct)))
 #stopifnot(all(c("symbol", "expected_annual_growth_rate") %in% colnames(dt_input_portfolio)))
 
 # To accomodate derivatives, same symbol used more than once etc, make sure 
 # that the simulations are identified by their position_id
-dt_one_day_delta_vector_pct <- merge(
+tbl_one_day_delta_vector_pct <- merge(
   dt_one_day_delta_vector_pct, 
   dt_input_portfolio[,.(symbol, position_id)],
   by    = "symbol",
   all.x = TRUE)
-dt_one_day_delta_vector_pct[, symbol := NULL]
+tbl_one_day_delta_vector_pct[, symbol := NULL]
+
+setnames(tbl_one_day_delta_vector_pct, "scenario", "sim_id")
+
+#-------------------------------------------------------------------------------
+#-- In Case the Portfolio Contains Derivatives Create the PnL simulations for --
+#-- the Derivatives Here (based on the PnL simulation of the underlying plus  --
+#-- details if needed)                                                        --
+#-------------------------------------------------------------------------------
+# Manual Adjustment
 
 #-------------------------------------------------------------------------------
 #-- Overlay the simulated one-day pnl-distributions with subject views for    -- 
 #-- example via Entropy Pooling                                               --
 #-------------------------------------------------------------------------------
-#dt_one_day_delta_vector_pct
-# q <- 
+# Manual Adjustment
 
 #-------------------------------------------------------------------------------
 #-- Generate Horizon Path Simulations                                         --
 #-------------------------------------------------------------------------------
-set_horizon_days   <- 252*1 
+tbl_expected_performance[volatility_id == "point_in_time", volatility_id := "bull_run"]
+tbl_one_day_delta_vector_pct[volatility_id == "point_in_time", volatility_id := "bull_run"]
+
+demean                      <- TRUE
+volatility_ids              <- c("downturn", "through_the_cycle", "bull_run")
+dt_time_spend_in_econ_cycle <- data.table("volatility_id" = volatility_ids)
+dt_time_spend_in_econ_cycle[volatility_id == "bull_run", time_in_days := round(3.0 * 252, 0)]
+dt_time_spend_in_econ_cycle[volatility_id == "through_the_cycle", time_in_days := round(4.5 * 252, 0)]
+dt_time_spend_in_econ_cycle[volatility_id == "downturn", time_in_days := round(2.5*252, 0)]
 
 #### USE PATH_SIMULATION CLASS ####
-dt_horizon_delta_vector_indexed <- path_simulations(
-  dt_one_day_delta_vector_pct[volatility_id == "through_the_cycle",.(volatility_id, position_id, scenario, pnl_pct)],
-  dt_input_portfolio[,.(position_id, expected_annual_growth_rate)],
-  set_horizon_days/252,
-  sim_paths, 
-  p_demean = TRUE,
-  p_prob   = NULL)
+lst_horizon_delta_vector_indexed <- pbapply::pblapply(volatility_ids, function(vol_id){
+  message(paste0("Now processing volatility_id: ", vol_id))
+  #vol_id <- "bull_run"
+  dt_horizon_delta_vector_indexed <- path_simulations(
+    tbl_one_day_delta_vector_pct[volatility_id == vol_id,.(position_id, sim_id, pnl_pct)],
+    tbl_expected_performance[volatility_id == vol_id,.(position_id, expected_annual_growth_rate)],
+    dt_time_spend_in_econ_cycle[volatility_id == vol_id][["time_in_days"]],
+    sim_paths)
+  dt_horizon_delta_vector_indexed[, volatility_id := vol_id]
+})
+dt_horizon_delta_vector_indexed <- rbindlist(lst_horizon_delta_vector_indexed)
+setorder(dt_horizon_delta_vector_indexed, "position_id", "sim_id")
+dt_horizon_delta_vector_indexed <- dt_horizon_delta_vector_indexed[, .(pnl = prod(pnl)), by = .(sim_id, position_id)]
 
-dt_horizon_delta_vector_indexed <- merge(
-  dt_horizon_delta_vector_indexed[path_scenario == set_horizon_days],
-  dt_input_portfolio[, .(position_id, symbol)],
-  by = "symbol",
-  all.x = TRUE)
-
-dt_horizon_delta_vector_indexed <- dt_horizon_delta_vector_indexed[,.(position_id, sim, cum_delta_change)]
+if(demean == TRUE){
+  dt_means <- setDT(dt_horizon_delta_vector_indexed)[, .(mean = mean(pnl) - 1), by = "position_id"]
+  dt_sim_paths <- merge(
+    dt_horizon_delta_vector_indexed,
+    dt_means,
+    by = "position_id",
+    all.x = TRUE)
+  dt_sim_paths[, pnl := pnl - mean]
+  dt_sim_paths[, mean := NULL]
+}
 
 #-------------------------------------------------------------------------------
 #-- Extract Long Horizon Delta-Vectors                                        --
 #-------------------------------------------------------------------------------
-simulated_delta_vectors <- copy(dt_horizon_delta_vector_indexed)
-simulated_delta_vectors[, cum_delta_change := cum_delta_change-1]
-setnames(simulated_delta_vectors, "sim", "scenario")
-setnames(simulated_delta_vectors, "cum_delta_change", "pnl_pct")
-simulated_delta_vectors <- dcast.data.table(simulated_delta_vectors, scenario ~ position_id, value.var = "pnl_pct")
-simulated_delta_vectors <- simulated_delta_vectors[, -1]
-
-
-tbl_pnl_simulations <- copy(simulated_delta_vectors)
-tbl_pnl_simulations[, scenario_id := 1:nrow(tbl_pnl_simulations)]
-tbl_pnl_simulations <- data.table::melt.data.table(
-  tbl_pnl_simulations, 
-  id.vars = "scenario_id")
-setnames(tbl_pnl_simulations, "variable", "position_id")
-setnames(tbl_pnl_simulations, "value", "pnl_pct")
+tbl_pnl_simulations <- copy(dt_sim_paths)
 
 
 #-------------------------------------------------------------------------------

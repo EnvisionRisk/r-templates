@@ -64,89 +64,77 @@ get_one_day_pnl_pct <- function(p_symbols, p_base_cur, p_ref_date, p_volatility_
 
 path_simulations <- function(p_dt_delta_pct,
                              p_dt_annual_growth_rate,
-                             p_sim_years,
-                             p_sim_paths = 10000,
-                             p_demean    = TRUE,
-                             p_prob      = NULL){
-  
+                             p_look_ahead_days,
+                             p_sim_paths = 10000){
+
   # rm(p_dt_delta_pct) <- dt_one_day_delta_vector_pct[,.(symbol, scenario, pnl_pct)]
   # rm(p_dt_annual_growth_rate) <- dt_input_portfolio[,.(symbol, expected_annual_growth_rate)]
   # rm(p_sim_years) <- sim_years
   # rm(p_sim_paths) <- sim_paths
-  
+
   #******************************************************************************
   #*
   #### FORWARD PATH SIMULATION FUNCTIONALITY ####
   #*
   #******************************************************************************
   # Functionality to simulate each path and extract the end state of each simulation
-  SimulatePaths <- function(sim_years, dt_delta_pct, smpl_prob = NULL){
-    # Don't change the 10.000 (in 1:10000 below) as it refers to the 
-    # pnl-simulations - not to the number of path-simulations.
-    if(is.null(smpl_prob) || length(smpl_prob) != 10000){
-      smpl_prob <- rep(1/10000, 10000)
-    }
-    
-    dt_path_sampl <- data.table("scenario" = sample(1:10000, sim_years*252, replace = TRUE, prob = smpl_prob))
-    
+  SimulatePaths <- function(look_ahead_days, dt_delta_pct){
+    dt_path_sampl <- data.table("sim_id" = sample(1:10000, look_ahead_days, replace = TRUE))
+
     dt_sim_path <- merge(
       dt_path_sampl,
-      dt_delta_pct, 
-      by = "scenario",
+      dt_delta_pct,
+      by = "sim_id",
       all.x = TRUE,
       sort = FALSE)
     # Labeling the path scenarios
-    dt_sim_path[, path_scenario := sort(rep(1:(sim_years * 252), length(unique(dt_delta_pct$symbol))))]
+    dt_sim_path[, path_scenario := sort(rep(1:(look_ahead_days), length(unique(dt_delta_pct$position_id))))]
     # Change the values so the can be multiplied later on.
     dt_sim_path[, delta_change := 1+pnl_pct]
-    setorder(dt_sim_path, "symbol", "path_scenario")
+    setorder(dt_sim_path, "position_id", "path_scenario")
     # Accumulate the simulated PnL
-    dt_sim_path[, cum_delta_change := cumprod(delta_change), by = "symbol"]
+    dt_sim_path[, cum_delta_change := cumprod(delta_change), by = "position_id"]
     return(dt_sim_path)
   }
-  
-  # For each simulated path, only the outcome from the chosen steps 
-  # ('extract_steps') is kept. 
-  ExtractEndPath <- function(sim_years, dt_delta_pct, extract_steps = NULL, smpl_prob = NULL){
-    dt_sim_path <- SimulatePaths(sim_years, dt_delta_pct, smpl_prob)
-    if(is.null(extract_steps)){
-      dt_out <- dt_sim_path[path_scenario == sim_years*252, .(symbol, path_scenario, cum_delta_change)]
-    } else {
-      dt_out <- dt_sim_path[path_scenario %in% extract_steps, .(symbol, path_scenario, cum_delta_change)]
-    }
+
+  # For each simulated path, only the outcome from the chosen steps
+  # ('extract_steps') is kept.
+  ExtractEndPath <- function(look_ahead_days, dt_delta_pct){
+    dt_sim_path <- SimulatePaths(look_ahead_days, dt_delta_pct)
+    dt_out <- dt_sim_path[path_scenario == look_ahead_days, .(position_id, path_scenario, cum_delta_change)]
     return(dt_out)
   }
-  
+
   #******************************************************************************
   #*
   #### Adjust the expected annual growth rate for each instrument ####
   #*
   #******************************************************************************
-  dt_implied_sim_performance <- p_dt_delta_pct[,list(average = mean(pnl_pct)), by=symbol]
-  
+  dt_implied_sim_performance <- p_dt_delta_pct[,list(average = mean(pnl_pct)), by=position_id]
+
   dt_delta_vec_pct <- merge(
     p_dt_delta_pct,
     dt_implied_sim_performance,
-    by = "symbol",
+    by = "position_id",
     all.x = TRUE)
   dt_delta_vec_pct[, pnl_pct_adj := pnl_pct - average]
   dt_delta_vec_pct[, ":=" (pnl_pct = NULL, average = NULL)]
 
   dt_delta_vec_pct <- merge(
     dt_delta_vec_pct,
-    p_dt_annual_growth_rate[,.(symbol, expected_annual_growth_rate)],
-    by = "symbol",
+    p_dt_annual_growth_rate[,.(position_id, expected_annual_growth_rate)],
+    by = "position_id",
     all.x = TRUE)
-  
+
   # Adjust the annual growth expectation to daily
   dt_delta_vec_pct[, average := ((1+expected_annual_growth_rate)^(1/252) - 1)]
-  
+
   # Do the adjustment by adjusting the daily trend-component
-  dt_delta_vec_pct[, pnl_pct_adj := pnl_pct_adj + average] 
+  dt_delta_vec_pct[, pnl_pct_adj := pnl_pct_adj + average]
   setnames(dt_delta_vec_pct, "pnl_pct_adj", "pnl_pct")
-  
+
   dt_delta_vec_pct[, ":=" (expected_annual_growth_rate = NULL, average = NULL)]
-  
+
   #******************************************************************************
   #*
   #### GO PARALLEL - Greatly speed up the path simulations with multiple CPU's ####
@@ -154,65 +142,205 @@ path_simulations <- function(p_dt_delta_pct,
   #******************************************************************************
   simulations_max   <- p_sim_paths
   simulations_descr <- "path"
-  
-  # Extract 5 equidistant time points to show evolution simulated risk and 
-  # performance evolution over time.
-  set_extract_steps <- 1:p_sim_years * 252
-  
+
   message("Setting up the cluster")
   n_cores <- parallel::detectCores()-1
-  
+
   #*** Boiler Plate Code for the Parallel Execution ***
   cl      <- parallel::makeCluster(n_cores)
   doSNOW::registerDoSNOW(cl)
-  
+
   # progress bar ------------------------------------------------------------
   # token reported in progress bar
-  paths <- paste(as.character(1:simulations_max), 
-                 as.character(simulations_max), sep= "/")  
-  
+  paths <- paste(as.character(1:simulations_max),
+                 as.character(simulations_max), sep= "/")
+
   # allowing progress bar to be used in foreach -----------------------------
   progress <- function(n){
     pb$tick(tokens = list(paths_process = paths[n]))
-  } 
+  }
   opts <- list(progress = progress)
-  
+
   # foreach loop ------------------------------------------------------------
   # Reset pb for each run
   pb <- progress::progress_bar$new(
     format = paste0(simulations_descr, "_processed = :paths_process [:bar] :elapsed | eta: :eta"),
-    total = simulations_max,    
+    total = simulations_max,
     width = 60)
-  
+
   #*** Boiler Plate Code - END ***
-  
+
   # Iterate
   message("Performing path generating")
   dt_sim_paths <- foreach::foreach(i = 1:simulations_max, .packages = c("data.table"), .combine = rbind, .options.snow = opts) %dopar% {
-    dt_out <- ExtractEndPath(p_sim_years, dt_delta_vec_pct, extract_steps = set_extract_steps, smpl_prob = p_prob)
-    dt_out[, sim := i]
+  #dt_sim_paths <- lapply(1:simulations_max, function(i){
+    dt_out <- ExtractEndPath(p_look_ahead_days, dt_delta_vec_pct)
+    dt_out[, sim_id := i]
+    dt_out
   }
-  
-  if(p_demean == TRUE){
-    dt_means <- setDT(dt_sim_paths)[, .(mean = mean(cum_delta_change) - 1), by = c("symbol", "path_scenario")]
-    dt_sim_paths <- merge(
-     dt_sim_paths,
-     dt_means,
-     by = c("symbol", "path_scenario"),
-     all.x = TRUE) 
-    dt_sim_paths[, cum_delta_change := cum_delta_change - mean]
-    dt_sim_paths[, mean := NULL]
-  }
-  
+
   # Terminate the progressbar
   pb$terminate()
-  
+
   # Stop the cluster
-  snow::stopCluster(cl) 
+  snow::stopCluster(cl)
   #closeAllConnections()
-  
-  return(dt_sim_paths)
+
+  return(dt_sim_paths[,.(position_id, sim_id, "pnl" = cum_delta_change)])
 }
+
+# path_simulations <- function(p_dt_delta_pct,
+#                              p_dt_annual_growth_rate,
+#                              p_sim_years,
+#                              p_sim_paths = 10000,
+#                              p_demean    = TRUE,
+#                              p_prob      = NULL){
+#   
+#   # rm(p_dt_delta_pct) <- dt_one_day_delta_vector_pct[,.(symbol, scenario, pnl_pct)]
+#   # rm(p_dt_annual_growth_rate) <- dt_input_portfolio[,.(symbol, expected_annual_growth_rate)]
+#   # rm(p_sim_years) <- sim_years
+#   # rm(p_sim_paths) <- sim_paths
+#   
+#   #******************************************************************************
+#   #*
+#   #### FORWARD PATH SIMULATION FUNCTIONALITY ####
+#   #*
+#   #******************************************************************************
+#   # Functionality to simulate each path and extract the end state of each simulation
+#   SimulatePaths <- function(sim_years, dt_delta_pct, smpl_prob = NULL){
+#     # Don't change the 10.000 (in 1:10000 below) as it refers to the 
+#     # pnl-simulations - not to the number of path-simulations.
+#     if(is.null(smpl_prob) || length(smpl_prob) != 10000){
+#       smpl_prob <- rep(1/10000, 10000)
+#     }
+#     
+#     dt_path_sampl <- data.table("scenario" = sample(1:10000, sim_years*252, replace = TRUE, prob = smpl_prob))
+#     
+#     dt_sim_path <- merge(
+#       dt_path_sampl,
+#       dt_delta_pct, 
+#       by = "scenario",
+#       all.x = TRUE,
+#       sort = FALSE)
+#     # Labeling the path scenarios
+#     dt_sim_path[, path_scenario := sort(rep(1:(sim_years * 252), length(unique(dt_delta_pct$symbol))))]
+#     # Change the values so the can be multiplied later on.
+#     dt_sim_path[, delta_change := 1+pnl_pct]
+#     setorder(dt_sim_path, "symbol", "path_scenario")
+#     # Accumulate the simulated PnL
+#     dt_sim_path[, cum_delta_change := cumprod(delta_change), by = "symbol"]
+#     return(dt_sim_path)
+#   }
+#   
+#   # For each simulated path, only the outcome from the chosen steps 
+#   # ('extract_steps') is kept. 
+#   ExtractEndPath <- function(sim_years, dt_delta_pct, extract_steps = NULL, smpl_prob = NULL){
+#     dt_sim_path <- SimulatePaths(sim_years, dt_delta_pct, smpl_prob)
+#     if(is.null(extract_steps)){
+#       dt_out <- dt_sim_path[path_scenario == sim_years*252, .(symbol, path_scenario, cum_delta_change)]
+#     } else {
+#       dt_out <- dt_sim_path[path_scenario %in% extract_steps, .(symbol, path_scenario, cum_delta_change)]
+#     }
+#     return(dt_out)
+#   }
+#   
+#   #******************************************************************************
+#   #*
+#   #### Adjust the expected annual growth rate for each instrument ####
+#   #*
+#   #******************************************************************************
+#   dt_implied_sim_performance <- p_dt_delta_pct[,list(average = mean(pnl_pct)), by=symbol]
+#   
+#   dt_delta_vec_pct <- merge(
+#     p_dt_delta_pct,
+#     dt_implied_sim_performance,
+#     by = "symbol",
+#     all.x = TRUE)
+#   dt_delta_vec_pct[, pnl_pct_adj := pnl_pct - average]
+#   dt_delta_vec_pct[, ":=" (pnl_pct = NULL, average = NULL)]
+#   
+#   dt_delta_vec_pct <- merge(
+#     dt_delta_vec_pct,
+#     p_dt_annual_growth_rate[,.(symbol, expected_annual_growth_rate)],
+#     by = "symbol",
+#     all.x = TRUE)
+#   
+#   # Adjust the annual growth expectation to daily
+#   dt_delta_vec_pct[, average := ((1+expected_annual_growth_rate)^(1/252) - 1)]
+#   
+#   # Do the adjustment by adjusting the daily trend-component
+#   dt_delta_vec_pct[, pnl_pct_adj := pnl_pct_adj + average] 
+#   setnames(dt_delta_vec_pct, "pnl_pct_adj", "pnl_pct")
+#   
+#   dt_delta_vec_pct[, ":=" (expected_annual_growth_rate = NULL, average = NULL)]
+#   
+#   #******************************************************************************
+#   #*
+#   #### GO PARALLEL - Greatly speed up the path simulations with multiple CPU's ####
+#   #*
+#   #******************************************************************************
+#   simulations_max   <- p_sim_paths
+#   simulations_descr <- "path"
+#   
+#   # Extract 5 equidistant time points to show evolution simulated risk and 
+#   # performance evolution over time.
+#   set_extract_steps <- 1:p_sim_years * 252
+#   
+#   message("Setting up the cluster")
+#   n_cores <- parallel::detectCores()-1
+#   
+#   #*** Boiler Plate Code for the Parallel Execution ***
+#   cl      <- parallel::makeCluster(n_cores)
+#   doSNOW::registerDoSNOW(cl)
+#   
+#   # progress bar ------------------------------------------------------------
+#   # token reported in progress bar
+#   paths <- paste(as.character(1:simulations_max), 
+#                  as.character(simulations_max), sep= "/")  
+#   
+#   # allowing progress bar to be used in foreach -----------------------------
+#   progress <- function(n){
+#     pb$tick(tokens = list(paths_process = paths[n]))
+#   } 
+#   opts <- list(progress = progress)
+#   
+#   # foreach loop ------------------------------------------------------------
+#   # Reset pb for each run
+#   pb <- progress::progress_bar$new(
+#     format = paste0(simulations_descr, "_processed = :paths_process [:bar] :elapsed | eta: :eta"),
+#     total = simulations_max,    
+#     width = 60)
+#   
+#   #*** Boiler Plate Code - END ***
+#   
+#   # Iterate
+#   message("Performing path generating")
+#   dt_sim_paths <- foreach::foreach(i = 1:simulations_max, .packages = c("data.table"), .combine = rbind, .options.snow = opts) %dopar% {
+#     dt_out <- ExtractEndPath(p_sim_years, dt_delta_vec_pct, extract_steps = set_extract_steps, smpl_prob = p_prob)
+#     dt_out[, sim := i]
+#   }
+#   
+#   if(p_demean == TRUE){
+#     dt_means <- setDT(dt_sim_paths)[, .(mean = mean(cum_delta_change) - 1), by = c("symbol", "path_scenario")]
+#     dt_sim_paths <- merge(
+#       dt_sim_paths,
+#       dt_means,
+#       by = c("symbol", "path_scenario"),
+#       all.x = TRUE) 
+#     dt_sim_paths[, cum_delta_change := cum_delta_change - mean]
+#     dt_sim_paths[, mean := NULL]
+#   }
+#   
+#   # Terminate the progressbar
+#   pb$terminate()
+#   
+#   # Stop the cluster
+#   snow::stopCluster(cl) 
+#   #closeAllConnections()
+#   
+#   return(dt_sim_paths)
+# }
+
 
 create_portfolio_path <- function(p_dt_portfolio){
   # {symbol, path_scenario, cum_delta_change, sim, weight}
